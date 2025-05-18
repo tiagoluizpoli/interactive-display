@@ -1,0 +1,79 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": []
+  },
+  "formatter": {
+    "enabled": true,
+    "lineWidth": 120,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", ".favorites.json", ".vscode/"]
+  },
+  "organizeImports": {
+    "enabled": true,
+    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", "turbo", ".vscode/"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "security": {
+        "noGlobalEval": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": true,
+            "requireAscii": true,
+            "filenameCases": ["kebab-case"]
+          }
+        }
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noShadowRestrictedNames": "off",
+        "noConfusingVoidType": "off",
+        "noArrayIndexKey": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "useExhaustiveDependencies": "off"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off",
+        "noForEach": "off"
+      }
+    },
+    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", "turbo", ".vscode/"]
+  },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always"
+    }
+  },
+  "overrides": [
+    {
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    }
+  ]
+}

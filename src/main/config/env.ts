@@ -5,11 +5,11 @@ config();
 
 const envSchema = z.object({
   API_PORT: z.string().default('5000'),
-  API_CORS_ORIGINS: z.string().default('*'),
-  API_CORS_ALLOWED_HEADERS: z.string().default('*'),
-  API_LOGGER_LEVEL: z.enum(['debug', 'dev', 'prod']).default('dev'),
+  API_CORS_ORIGINS: z.string(),
+  API_CORS_ALLOWED_HEADERS: z.string(),
+  API_LOGGER_LEVEL: z.enum(['debug', 'dev', 'prod']),
 
-  WS_PORT: z.string().default('5050'),
+  WS_PORT: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

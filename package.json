@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/main/api-server.ts",
+    "dev": "tsx watch src/main/server.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
   },

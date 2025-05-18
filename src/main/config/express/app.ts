@@ -15,9 +15,7 @@ const logOptions: Record<string, (app: Express) => void> = {
     ),
 };
 
-export const setupApp = (): Express => {
-  const app = express();
-
+export const setupApp = (app: Express) => {
   app.use(express.json());
 
   app.use(
@@ -32,6 +30,4 @@ export const setupApp = (): Express => {
   logOptions[loggerLevel](app);
 
   app.use(router);
-
-  return app;
 };

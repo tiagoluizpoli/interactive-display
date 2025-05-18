@@ -6,32 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>websocket test</title>
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        console.log('websocket test');
-        const socket = io()
-        socket.on('connect', () => {
-
-            console.log(`${socket.id} connected`);
-        });
-        socket.on('message', (message) => {
-            const messages = document.getElementById('messages')
-            const li = document.createElement('li')
-            li.innerText = `${message.date} - ${message.message}`
-            messages.appendChild(li)
-            console.log(message)
-        })
-    </script>
+    <script src="app.js"></script>
 
 </head>
 
 
 <body>
-    <h1>websocket test</h1>
-    <div id="rendered-messages">
-        <h2>Messages</h2>
-        <ul id="messages"></ul>
-    </div>
+    <h1>Now playing</h1>
 
+    <p id="playing"></p>
 
 
 

@@ -1,0 +1,14 @@
+export interface Slide {
+  is_playing: boolean;
+  uuid: {
+    string: string;
+  } | null;
+  name: string;
+  artist: string;
+  audio_only: boolean;
+  duration: number;
+}
+
+export interface ListenToSlideChange {
+  onSlideChange: (callback: (slide: Slide) => void) => Promise<void>;
+}

@@ -10,6 +10,9 @@ const envSchema = z.object({
   API_LOGGER_LEVEL: z.enum(['debug', 'dev', 'prod']),
 
   WS_PORT: z.string(),
+
+  SERVICES_PRO_PRESENTER_HOST: z.string(),
+  SERVICES_PRO_PRESENTER_PORT: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -41,6 +44,12 @@ export const env = {
     },
     ws: {
       port: Number(WS_PORT),
+    },
+  },
+  services: {
+    proPresenter: {
+      host: parsedEnv.data.SERVICES_PRO_PRESENTER_HOST,
+      port: Number(parsedEnv.data.SERVICES_PRO_PRESENTER_PORT),
     },
   },
 };

@@ -1,15 +1,21 @@
 import type { PresentSlide } from '../../domain';
 import { io } from '../../main/server';
-import type { ListenToSlideChange, Slide } from '../contracts';
+import type { ListenToSlideChange, PresentationRepository } from '../contracts';
 
 export class ExecutePresentSlide implements PresentSlide {
-  constructor(private readonly listenToSlideChange: ListenToSlideChange) {}
+  constructor(
+    private readonly presentationRepository: PresentationRepository,
+    private readonly listenToSlideChange: ListenToSlideChange,
+  ) {}
 
   async execute(): Promise<void> {
-    await this.listenToSlideChange.onSlideChange(this.presentSlide);
-  }
+    console.log(this.presentationRepository);
 
-  private async presentSlide(slide: Slide): Promise<void> {
-    io.emit('slide', slide);
+    await this.listenToSlideChange.onSlideChange(async (code) => {
+      console.log(code);
+      const presentation = await this.presentationRepository.getPresentationByCode(code);
+
+      io.emit('slide', presentation);
+    });
   }
 }

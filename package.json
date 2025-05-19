@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/main/server.ts",
+    "dev:playground": "tsx watch src/playground/index.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
   },
@@ -19,6 +20,7 @@
     "morgan": "^1.10.0",
     "socket.io": "^4.8.1",
     "tsx": "^4.19.4",
+    "uuid": "^11.1.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

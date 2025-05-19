@@ -13,6 +13,8 @@ const envSchema = z.object({
 
   SERVICES_PRO_PRESENTER_HOST: z.string(),
   SERVICES_PRO_PRESENTER_PORT: z.string(),
+
+  DB_JSON_PATH: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -51,5 +53,8 @@ export const env = {
       host: parsedEnv.data.SERVICES_PRO_PRESENTER_HOST,
       port: Number(parsedEnv.data.SERVICES_PRO_PRESENTER_PORT),
     },
+  },
+  db: {
+    jsonPath: parsedEnv.data.DB_JSON_PATH,
   },
 };

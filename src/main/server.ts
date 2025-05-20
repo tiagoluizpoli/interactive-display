@@ -2,7 +2,6 @@ import { env, setupApp, setupIoHooks } from './config';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import express from 'express';
-import { makePresentSlide } from './factories/usecases/present-slide';
 
 const { port } = env.baseConfig.api;
 
@@ -34,9 +33,6 @@ const init = async () => {
       process.exit(0);
     });
   });
-
-  const presentSlide = makePresentSlide();
-  presentSlide.execute();
 };
 
 init().catch(console.error);

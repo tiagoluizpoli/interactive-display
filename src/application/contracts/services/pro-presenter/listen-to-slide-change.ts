@@ -11,4 +11,5 @@ export interface Slide {
 
 export interface ListenToSlideChange {
   onSlideChange: (callback: (code: string) => void) => Promise<void>;
+  onPublicStateChange: (callback: (state: boolean) => void) => Promise<void>;
 }

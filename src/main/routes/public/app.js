@@ -6,10 +6,12 @@ socket.on('connect', () => {
 });
 
 
-socket.on('slide', (msg) => {
-    console.log(msg);
+socket.on('slide', (currentPresentation) => {
+    console.log(currentPresentation);
+
+    const { presentation, displayEnabled } = currentPresentation;
     const area = document.getElementById('area');
-    if (msg) {
+    if (presentation && displayEnabled === true) {
 
         const title = document.getElementById('title');
         const description = document.getElementById('description');
@@ -17,15 +19,15 @@ socket.on('slide', (msg) => {
         const banner = document.getElementById('banner');
 
 
-        if (msg.qrCodeContent && !msg.qrCodeContent.startsWith('data:') && !msg.qrCodeContent.startsWith('http')) {
-            qrcode.src = `data:image/png;base64,${msg.qrCodeContent}`;
+        if (presentation.qrCodeContent && !presentation.qrCodeContent.startsWith('data:') && !presentation.qrCodeContent.startsWith('http')) {
+            qrcode.src = `data:image/png;base64,${presentation.qrCodeContent}`;
         } else {
-            qrcode.src = msg.qrCodeContent || '';
+            qrcode.src = presentation.qrCodeContent || '';
         }
-        title.innerHTML = msg.title;
-        description.innerHTML = msg.description;
+        title.innerHTML = presentation.title;
+        description.innerHTML = presentation.description;
 
-        banner.src = msg.imageUrl;
+        banner.src = presentation.imageUrl;
 
 
         area.classList.remove('hidden');

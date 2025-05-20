@@ -1,4 +1,4 @@
-import type { PresentSlide } from '../../domain';
+import type { CurrentPresentationDto, PresentSlide } from '../../domain';
 import { io } from '../../main/server';
 import type { ListenToSlideChange, PresentationRepository } from '../contracts';
 
@@ -9,13 +9,31 @@ export class ExecutePresentSlide implements PresentSlide {
   ) {}
 
   async execute(): Promise<void> {
-    console.log(this.presentationRepository);
-
-    await this.listenToSlideChange.onSlideChange(async (code) => {
-      console.log(code);
+    this.listenToSlideChange.onSlideChange(async (code) => {
       const presentation = await this.presentationRepository.getPresentationByCode(code);
 
-      io.emit('slide', presentation);
+      await this.presentationRepository.setCurrentPresentation(presentation ?? null);
+
+      const displayEnabled = await this.presentationRepository.getDisplayEnabled();
+
+      const currentPresentation = {
+        presentation,
+        displayEnabled,
+      };
+      io.emit('slide', currentPresentation);
+    });
+
+    this.listenToSlideChange.onPublicStateChange(async (enabled) => {
+      await this.presentationRepository.setDisplayEnabled(enabled);
+
+      const presentation = await this.presentationRepository.getCurrentPresentation();
+
+      const currentPresentation: CurrentPresentationDto = {
+        presentation,
+        displayEnabled: enabled,
+      };
+
+      io.emit('slide', currentPresentation);
     });
   }
 }

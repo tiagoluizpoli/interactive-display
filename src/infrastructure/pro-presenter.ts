@@ -1,7 +1,16 @@
-import type { ListenToSlideChange, Slide } from '../../../application';
-import { httpClient } from '../../../main/config';
+import { httpClient } from '../config';
 
-export class ExternalListenToSlideChange implements ListenToSlideChange {
+export interface Slide {
+  is_playing: boolean;
+  uuid: {
+    string: string;
+  } | null;
+  name: string;
+  artist: string;
+  audio_only: boolean;
+  duration: number;
+}
+export class ProPresenter {
   async onSlideChange(callback: (code: string) => void): Promise<void> {
     try {
       const response = await httpClient.get('/v1/transport/presentation/current', {

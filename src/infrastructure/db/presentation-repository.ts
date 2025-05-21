@@ -1,4 +1,4 @@
-import type { Presentation } from '../../../domain';
+import type { Presentation } from '../../models';
 
 export interface PresentationRepository {
   create(presentation: Presentation): Promise<void>;

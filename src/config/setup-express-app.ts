@@ -1,8 +1,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import logger from 'morgan';
-import { env } from '../env';
-import { router } from '../../routes';
+import { env } from './env';
 
 const logOptions: Record<string, (app: Express) => void> = {
   debug: (app) => app.use(logger('combined')),
@@ -15,7 +14,7 @@ const logOptions: Record<string, (app: Express) => void> = {
     ),
 };
 
-export const setupApp = (app: Express) => {
+export const setupExpressApp = (app: Express) => {
   app.use(express.json());
 
   app.use(
@@ -28,6 +27,4 @@ export const setupApp = (app: Express) => {
   const { loggerLevel } = env.baseConfig.api;
 
   logOptions[loggerLevel](app);
-
-  app.use(router);
 };

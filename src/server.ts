@@ -1,13 +1,16 @@
-import { env, setupApp, setupIoHooks } from './config';
+import { env, setupExpressApp } from './config';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import express from 'express';
+import { setupSocketIoHooks } from './io-hooks';
+import { router } from './routes';
 
 const { port } = env.baseConfig.api;
 
 const app = express();
 
-setupApp(app);
+setupExpressApp(app);
+app.use(router);
 
 export const server = createServer(app);
 
@@ -15,7 +18,7 @@ export const io = new Server(server, {
   connectionStateRecovery: {},
 });
 
-setupIoHooks(io);
+setupSocketIoHooks(io);
 
 const init = async () => {
   const expressServer = server.listen(port, () => {

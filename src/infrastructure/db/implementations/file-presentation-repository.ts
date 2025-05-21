@@ -31,42 +31,6 @@ export class FilePresentationRepository implements PresentationRepository {
     return Promise.resolve();
   }
 
-  setCurrentPresentation(currentPresentation: Presentation | null): Promise<void> {
-    const db = this.readFile();
-
-    db.currentPresentation = currentPresentation;
-
-    fs.writeFileSync(this.jsonPath, JSON.stringify(db, null, 2));
-
-    return Promise.resolve();
-  }
-
-  getCurrentPresentation(): Promise<Presentation | undefined> {
-    const db = this.readFile();
-    const currentPresentation = db.currentPresentation;
-    if (!currentPresentation) {
-      return Promise.resolve(undefined);
-    }
-
-    return Promise.resolve(currentPresentation);
-  }
-
-  getDisplayEnabled(): Promise<boolean> {
-    const db = this.readFile();
-    const displayEnabled = db.displayEnabled;
-
-    return Promise.resolve(displayEnabled);
-  }
-
-  setDisplayEnabled(displayEnabled: boolean): Promise<void> {
-    const db = this.readFile();
-    db.displayEnabled = displayEnabled;
-
-    fs.writeFileSync(this.jsonPath, JSON.stringify(db, null, 2));
-
-    return Promise.resolve();
-  }
-
   private readFile() {
     try {
       // Check if the file exists

@@ -30,4 +30,8 @@ export class Present {
 
     io.emit('slide', this.currentPresentation.toJSON());
   };
+
+  public emitCurrentPresentation(): void {
+    io.emit('slide', this.currentPresentation.toJSON());
+  }
 }

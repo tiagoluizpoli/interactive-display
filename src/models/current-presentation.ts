@@ -1,3 +1,4 @@
+import { io } from '../server';
 import type { Presentation } from './presentation';
 
 export interface CurrentPresentationDto {
@@ -16,13 +17,19 @@ export class CurrentPresentation {
 
   public setPresentation(presentation: Presentation | null): void {
     this.presentation = presentation;
+    this.emitCurrentPresentation();
   }
 
   public setDisplayEnabled(displayEnabled: boolean): void {
     this.displayEnabled = displayEnabled;
+    this.emitCurrentPresentation();
   }
 
-  public toJSON(): CurrentPresentationDto {
+  private emitCurrentPresentation(): void {
+    io.emit('slide', this.toJSON());
+  }
+
+  private toJSON(): CurrentPresentationDto {
     return {
       presentation: this.presentation,
       displayEnabled: this.displayEnabled,

@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import express from 'express';
 import { setupSocketIoHooks } from './io-hooks';
 import { router } from './routes';
-import { makePresent } from './present-factory';
+import { makePresent } from '@/backend/present-factory';
 
 const { port, cors } = env.baseConfig.api;
 

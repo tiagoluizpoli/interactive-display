@@ -1,4 +1,4 @@
-import './App.css';
+import './app.css';
 import { useEffect, useState } from 'react';
 import { type CurrentPresentationDto, socket } from './socket';
 

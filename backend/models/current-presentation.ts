@@ -25,7 +25,7 @@ export class CurrentPresentation {
     this.emitCurrentPresentation();
   }
 
-  private emitCurrentPresentation(): void {
+  public emitCurrentPresentation(): void {
     io.emit('slide', this.toJSON());
   }
 

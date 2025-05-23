@@ -22,3 +22,6 @@ router.get('/send-message', (req, res) => {
 });
 
 router.use('/websocketui', express.static(path.join(__dirname, 'public')));
+
+const staticPath = path.join(__dirname, '..', '..', 'files');
+router.use('/files', express.static(staticPath));

@@ -6,7 +6,7 @@ import { setupSocketIoHooks } from './io-hooks';
 import { router } from './routes';
 import { makePresent } from './present-factory';
 
-const { port } = env.baseConfig.api;
+const { port, cors } = env.baseConfig.api;
 
 const app = express();
 
@@ -17,6 +17,9 @@ export const server = createServer(app);
 
 export const io = new Server(server, {
   connectionStateRecovery: {},
+  cors: {
+    origin: cors.origin,
+  },
 });
 
 const present = makePresent();

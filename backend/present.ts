@@ -26,5 +26,7 @@ export class Present {
     this.currentPresentation.setDisplayEnabled(enabled);
   };
 
-  public emitCurrentPresentation(): void {}
+  public emitCurrentPresentation(): void {
+    this.currentPresentation.emitCurrentPresentation();
+  }
 }

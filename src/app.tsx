@@ -25,7 +25,7 @@ export default App;
 
 const Display = ({ presentation, displayEnabled }: CurrentPresentationDto) => {
   if (!presentation || !displayEnabled) {
-    return <div></div>;
+    return <div />;
   }
   return (
     <div id="area" className="visible">

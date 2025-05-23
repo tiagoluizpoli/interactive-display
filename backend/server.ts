@@ -1,10 +1,10 @@
-import { env, setupExpressApp } from './config';
 import { createServer } from 'node:http';
-import { Server } from 'socket.io';
 import express from 'express';
+import { Server } from 'socket.io';
+import { env, setupExpressApp } from './config';
 import { setupSocketIoHooks } from './io-hooks';
-import { router } from './routes';
 import { makePresent } from './present-factory';
+import { router } from './routes';
 
 const { port, cors } = env.baseConfig.api;
 

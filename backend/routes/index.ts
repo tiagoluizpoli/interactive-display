@@ -1,8 +1,8 @@
-import express, { Router } from 'express';
 import path from 'node:path';
-import { io } from '../server';
-import {fileURLToPath} from 'node:url'
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import express, { Router } from 'express';
+import { io } from '../server';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 

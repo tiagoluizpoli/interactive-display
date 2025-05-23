@@ -1,5 +1,5 @@
-import express, { type Express } from 'express';
 import cors from 'cors';
+import express, { type Express } from 'express';
 import logger from 'morgan';
 import { env } from './env';
 

@@ -1,4 +1,4 @@
-import type { Server, DefaultEventsMap } from 'socket.io';
+import type { DefaultEventsMap, Server } from 'socket.io';
 import type { Present } from './present';
 
 export const setupSocketIoHooks = (

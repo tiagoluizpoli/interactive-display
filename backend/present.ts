@@ -1,6 +1,6 @@
+import type { ProPresenter } from './infrastructure';
 import type { PresentationRepository } from './infrastructure/db';
 import { CurrentPresentation } from './models';
-import type { ProPresenter } from './infrastructure';
 
 export class Present {
   private currentPresentation: CurrentPresentation = new CurrentPresentation();

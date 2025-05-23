@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { PresentationRepository } from '../presentation-repository';
 import type { Presentation } from '../../../models';
+import type { PresentationRepository } from '../presentation-repository';
 
 export interface JsonDbSchema {
   presentations: Presentation[];

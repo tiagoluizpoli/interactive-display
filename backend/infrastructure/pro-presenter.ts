@@ -1,5 +1,5 @@
-import { httpClient } from '../config';
 import type { AxiosError } from 'axios';
+import { httpClient } from '../config';
 
 export interface Slide {
   is_playing: boolean;

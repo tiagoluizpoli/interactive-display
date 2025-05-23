@@ -1,6 +1,10 @@
 import express, { Router } from 'express';
 import path from 'node:path';
 import { io } from '../server';
+import {fileURLToPath} from 'node:url'
+import { dirname } from 'node:path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export const router = Router();
 
@@ -24,4 +28,5 @@ router.get('/send-message', (req, res) => {
 router.use('/websocketui', express.static(path.join(__dirname, 'public')));
 
 const staticPath = path.join(__dirname, '..', '..', 'files');
+console.log('staticPath', staticPath);
 router.use('/files', express.static(staticPath));

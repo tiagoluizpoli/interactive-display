@@ -8,13 +8,13 @@ const __dirname = dirname(__filename);
 
 export const router = Router();
 
-router.get('/', (req, res) => {
+router.get('/', (_, res) => {
   res.status(200).json({
     message: 'Welcome to the API',
   });
 });
 
-router.get('/send-message', (req, res) => {
+router.get('/send-message', (_, res) => {
   io.emit('message', {
     message: 'Hello from the server',
     date: new Date(),

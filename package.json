@@ -8,6 +8,8 @@
     "dev:front": "vite",
     "dev:back": "tsx watch backend/server.ts",
     "dev": "concurrently --kill-others-on-fail \"pnpm dev:front\" \"pnpm dev:back\"",
+    "build": "tsc && vite build",
+    "build:back": "tsc --project tsconfig.node.json",
     "dev:preview": "vite preview",
     "dev:playground": "tsx watch src/playground/index.ts",
     "lint": "biome check .",

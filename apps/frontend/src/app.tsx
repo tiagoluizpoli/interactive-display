@@ -1,6 +1,6 @@
 import './app.css';
 import { useEffect, useState } from 'react';
-import { type CurrentPresentationDto, socket } from '@/frontend/socket';
+import { type CurrentPresentationDto, socket } from '@/src/socket';
 
 function App() {
   const [currentPresentation, setCurrentPresentation] = useState<CurrentPresentationDto>({

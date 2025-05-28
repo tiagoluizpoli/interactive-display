@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
-      '@/frontend': path.resolve(process.cwd(), '/frontend'),
+      '@/src': path.resolve(process.cwd(), './src'),
     },
   },
 });

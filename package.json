@@ -5,18 +5,18 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "install:all": "pnpm install && cd apps/frontend && pnpm install && cd ../backend && pnpm install",
-    "dev:front": "cd apps/frontend && pnpm dev",
-    "dev:back": "cd apps/backend && pnpm dev",
-    "dev": "concurrently --kill-others-on-fail \"pnpm dev:front\" \"pnpm dev:back\"",
-    "build": "cd apps/frontend && pnpm build && cd ../backend && pnpm build:back",
+    "install:all": "yarn install && cd apps/frontend && yarn install && cd ../backend && yarn install",
+    "dev:front": "cd apps/frontend && yarn dev",
+    "dev:back": "cd apps/backend && yarn dev",
+    "dev": "concurrently --kill-others-on-fail \"yarn dev:front\" \"yarn dev:back\"",
+    "build": "cd apps/frontend && yarn build && cd ../backend && yarn build:back",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  
   "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

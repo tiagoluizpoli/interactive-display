@@ -9,17 +9,26 @@ export const Layotut1 = () => {
   }
   return (
     <div className="w-screen h-screen flex flex-col justify-end">
-      <div className="bg-black/60 p-8 flex justify-between items-end ">
-        <div className="flex items-end gap-4">
-          <img id="qrcode" src={presentation.qrCodeContent} alt="qrcode" />
-          <div className="text-white">
-            <h1 className="text-5xl font-black">{presentation.title}</h1>
-            <p className="text-3xl font-light">{presentation.description}</p>
+      <div className="flex justify-between items-end ">
+        <div className="p-4 ">
+          <div className="max-w-4xl flex items-end gap-4 p-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl">
+            <img id="qrcode" className="w-36" src={presentation.qrCodeContent} alt="qrcode" />
+            <div className="text-white">
+              <h1 className=" text-5xl font-black ">{presentation.title}</h1>
+              <p className=" text-3xl">{presentation.description}</p>
+            </div>
           </div>
         </div>
 
-        <div className="h-48">
-          <img id="banner" src={`http://localhost:5000/${presentation.imageUrl}`} alt="" />
+        <div className="p-8">
+          {presentation.imageUrl && (
+            <img
+              id="banner"
+              className="max-h-[20rem] max-w-[56rem] object-contain rounded-2xl "
+              src={`http://localhost:5000/${presentation.imageUrl}`}
+              alt=""
+            />
+          )}
         </div>
       </div>
     </div>

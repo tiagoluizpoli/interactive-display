@@ -1,5 +1,3 @@
-// import './app.css';
-
 function App() {
   return <div>Empty</div>;
 }

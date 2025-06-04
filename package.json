@@ -11,17 +11,21 @@
     "dev": "concurrently --kill-others-on-fail \"yarn dev:front\" \"yarn dev:back\"",
     "build": "cd apps/frontend && yarn build && cd ../backend && yarn build:back",
     "lint": "biome check .",
-    "lint:fix": "biome check --write ."
+    "lint:fix": "biome check --write .",
+    "playground": "tsx watch playground/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^1.9.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@types/node": "^22.15.18",
     "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
 }

@@ -1,8 +1,7 @@
 import type { ProPresenter } from '@/infrastructure';
 import { CurrentMusic } from '@/models/current-music';
 import type { Music } from '@/models/music';
-
-import type { IPresentation } from '@/presentaions/local-persistence';
+import type { IPresentation } from './local-persistence';
 
 export class MusicPresentation implements IPresentation {
   currentMusic = new CurrentMusic();

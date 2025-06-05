@@ -1,5 +1,5 @@
+import { socket } from '@/src/config';
 import { useEffect, useMemo, useState } from 'react';
-import { io } from 'socket.io-client';
 
 interface Presentation {
   id: string;
@@ -27,13 +27,6 @@ export interface CurrentPresentationDto {
   presentation?: Presentation | null;
   displayEnabled?: boolean;
 }
-const socket = io('http://localhost:5000', {
-  transports: ['websocket'],
-});
-
-socket.on('connect', () => {
-  console.log('Connected to server');
-});
 
 export const usePresentationConnection = () => {
   const [currentPresentation, setCurrentPresentation] = useState<CurrentPresentationDto>({
@@ -60,7 +53,6 @@ export const usePresentationConnection = () => {
     () => ({
       currentPresentation,
       currentSlide,
-      socket,
     }),
     [currentPresentation, currentSlide],
   );

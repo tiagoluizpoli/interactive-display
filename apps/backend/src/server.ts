@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import express from 'express';
 import { setupSocketIoHooks } from './io-hooks';
 import { router } from './routes';
-import { makePresent } from '@/present-factory';
+import { makePresentations } from '@/present-factory';
 
 const { port, cors } = env.baseConfig.api;
 
@@ -22,8 +22,9 @@ export const io = new Server(server, {
   },
 });
 
-const present = makePresent();
-setupSocketIoHooks(io, present);
+const presentations = makePresentations();
+
+setupSocketIoHooks(io, presentations);
 
 const init = async () => {
   const expressServer = server.listen(port, () => {
@@ -45,6 +46,6 @@ const init = async () => {
 
 init()
   .then(() => {
-    present.execute();
+    presentations.execute();
   })
   .catch(console.error);

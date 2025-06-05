@@ -1,12 +1,20 @@
 import { env } from './config';
 import { FilePresentationRepository, ProPresenter } from './infrastructure';
-import { Present } from './present';
+import { LocalPersistence } from './presentaions/local-persistence';
+import { BannerPresentation } from './presentaions/banner-presentation';
+import { MusicPresentation } from './presentaions/music-presentation';
 
 const { jsonPath } = env.db;
 
-export const makePresent = () => {
+export const makePresentations = () => {
   const presentationRepository = new FilePresentationRepository(jsonPath);
   const proPresenter = new ProPresenter();
 
-  return new Present(presentationRepository, proPresenter);
+  const bannerPresentation = new BannerPresentation(presentationRepository, proPresenter);
+
+  const musicPresentation = new MusicPresentation(presentationRepository, proPresenter);
+
+  const localPersistence = new LocalPersistence([bannerPresentation, musicPresentation]);
+
+  return localPersistence;
 };

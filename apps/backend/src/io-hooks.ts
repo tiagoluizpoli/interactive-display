@@ -1,14 +1,14 @@
 import type { DefaultEventsMap, Server } from 'socket.io';
-import type { Present } from './present';
+import type { LocalPersistence } from './presentaions/local-persistence';
 
 export const setupSocketIoHooks = (
   io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,
-  present: Present,
+  localPersistence: LocalPersistence,
 ) => {
   io.on('connection', (socket) => {
     console.log(`user connected: ${socket.id}`);
 
-    present.emitCurrentPresentation();
+    localPersistence.emit();
 
     socket.on('disconnect', () => {
       console.log(`user Disconnected: ${socket.id}`);

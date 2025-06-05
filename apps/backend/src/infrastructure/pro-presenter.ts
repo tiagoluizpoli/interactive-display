@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios';
 import { httpClient } from '../config';
+import type { Music } from '@/models/music';
 
 export interface Slide {
   is_playing: boolean;
@@ -10,6 +11,19 @@ export interface Slide {
   artist: string;
   audio_only: boolean;
   duration: number;
+}
+
+export interface PresentationId {
+  uuid: string;
+  name: string;
+  index: number;
+}
+
+export interface PresentationSlideIndex {
+  presentation_index: {
+    index: number;
+    presentation_id: PresentationId;
+  } | null;
 }
 
 type SlideCallback = (code: string) => void;
@@ -26,6 +40,105 @@ type SetupStream = (retries?: number) => Promise<void>;
 
 export class ProPresenter {
   private readonly RETRY_DELAY = 2000; // 2 seconds
+
+  async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<void> {
+    const setupStream = async (): Promise<void> => {
+      try {
+        console.log('Connecting to ProPresenter focused presentation stream...');
+        const response = await httpClient.get('/v1/presentation/focused', {
+          params: {
+            chunked: true,
+          },
+          responseType: 'stream',
+        });
+
+        console.log('Connecting to ProPresenter focused presentation stream...');
+        response.data.on('data', async (chunk: Buffer) => {
+          try {
+            const data = chunk.toString();
+            const slide: PresentationId = JSON.parse(data);
+
+            console.log('Received presentation:', slide.name);
+
+            const musicResponse = await httpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
+
+            callback(musicResponse.data);
+          } catch (parseError) {
+            console.error('Error parsing slide data 2:', parseError);
+            // Continue listening even if one message failed to parse
+          }
+        });
+
+        response.data.on('end', () =>
+          this.retry({
+            setupStream,
+            logMessage: 'Slide stream ended. Reconnecting...',
+            callback: () => callback(null),
+          }),
+        );
+
+        response.data.on('error', (err: any) =>
+          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback(null) }),
+        );
+      } catch (error) {
+        this.onError(error, setupStream, () => callback(null));
+      }
+    };
+
+    // Start the connection process
+    await setupStream();
+  }
+
+  async onPresentationSlideIndexChanged(callback: (slideIndex: number | null) => void): Promise<void> {
+    const setupStream = async (): Promise<void> => {
+      try {
+        console.log('Connecting to ProPresenter focused presentation stream...');
+        const response = await httpClient.get('/v1/presentation/slide_index', {
+          params: {
+            chunked: true,
+          },
+          responseType: 'stream',
+        });
+
+        console.log('Connecting to ProPresenter focused presentation stream...');
+        response.data.on('data', async (chunk: Buffer) => {
+          try {
+            const data = chunk.toString();
+            const slide: PresentationSlideIndex = JSON.parse(data);
+
+            if (slide.presentation_index) {
+              console.log('Received slide index:', slide.presentation_index?.index);
+              return callback(slide.presentation_index.index);
+            }
+
+            console.log('Received null slide index');
+
+            callback(null);
+          } catch (parseError) {
+            console.error('Error parsing slide data:', parseError);
+            // Continue listening even if one message failed to parse
+          }
+        });
+
+        response.data.on('end', () =>
+          this.retry({
+            setupStream,
+            logMessage: 'Slide stream ended. Reconnecting...',
+            callback: () => callback(null),
+          }),
+        );
+
+        response.data.on('error', (err: any) =>
+          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback(null) }),
+        );
+      } catch (error) {
+        this.onError(error, setupStream, () => callback(null));
+      }
+    };
+
+    // Start the connection process
+    await setupStream();
+  }
 
   async onSlideChange(callback: (code: string) => void): Promise<void> {
     const setupStream = async (): Promise<void> => {

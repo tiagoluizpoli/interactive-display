@@ -1,14 +1,18 @@
-import type { ProPresenter } from './infrastructure';
-import type { PresentationRepository } from './infrastructure/db';
-import { CurrentPresentation } from './models';
+import { CurrentPresentation } from '@/models';
+import type { ProPresenter } from '../infrastructure';
+import type { PresentationRepository } from '../infrastructure/db';
+import type { IPresentation } from './local-persistence';
 
-export class Present {
-  private currentPresentation: CurrentPresentation = new CurrentPresentation();
+export class BannerPresentation implements IPresentation {
+  currentPresentation = new CurrentPresentation();
 
   constructor(
     private readonly presentationRepository: PresentationRepository,
     private readonly proPresenter: ProPresenter,
   ) {}
+  setDisplayEnabled(displayEnabled: boolean): void {
+    this.currentPresentation.setDisplayEnabled(displayEnabled);
+  }
 
   async execute(): Promise<void> {
     this.proPresenter.onSlideChange(this.onSlideChangeHook);
@@ -18,7 +22,6 @@ export class Present {
 
   private onSlideChangeHook = async (code: string) => {
     const presentation = await this.presentationRepository.getPresentationByCode(code);
-
     this.currentPresentation.setPresentation(presentation ?? null);
   };
 
@@ -26,7 +29,7 @@ export class Present {
     this.currentPresentation.setDisplayEnabled(enabled);
   };
 
-  public emitCurrentPresentation(): void {
+  public emit(): void {
     this.currentPresentation.emitCurrentPresentation();
   }
 }

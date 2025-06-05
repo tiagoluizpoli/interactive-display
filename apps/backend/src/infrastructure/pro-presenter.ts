@@ -1,4 +1,4 @@
-import type { AxiosError } from 'axios';
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { httpClient } from '../config';
 import type { Music } from '@/models/music';
 
@@ -26,8 +26,6 @@ export interface PresentationSlideIndex {
   } | null;
 }
 
-type SlideCallback = (code: string) => void;
-type PublicStateCallback = (state: boolean) => void;
 type ClearPresentationCallback = () => void;
 
 interface RetryParams {
@@ -38,35 +36,29 @@ interface RetryParams {
 
 type SetupStream = (retries?: number) => Promise<void>;
 
+const chunkedRequestConfig: AxiosRequestConfig = {
+  params: {
+    chunked: true,
+  },
+  responseType: 'stream',
+};
 export class ProPresenter {
-  private readonly RETRY_DELAY = 2000; // 2 seconds
+  private readonly RETRY_DELAY = 3000; // 2 seconds
 
   async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
         console.log('Connecting to ProPresenter focused presentation stream...');
-        const response = await httpClient.get('/v1/presentation/focused', {
-          params: {
-            chunked: true,
-          },
-          responseType: 'stream',
-        });
+        const response = await httpClient.get('/v1/presentation/focused', chunkedRequestConfig);
 
         console.log('Connecting to ProPresenter focused presentation stream...');
-        response.data.on('data', async (chunk: Buffer) => {
-          try {
-            const data = chunk.toString();
-            const slide: PresentationId = JSON.parse(data);
 
-            console.log('Received presentation:', slide.name);
+        this.onData<PresentationId>(response, async (slide) => {
+          console.log('Received presentation:', slide.name);
 
-            const musicResponse = await httpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
+          const musicResponse = await httpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
 
-            callback(musicResponse.data);
-          } catch (parseError) {
-            console.error('Error parsing slide data 2:', parseError);
-            // Continue listening even if one message failed to parse
-          }
+          callback(musicResponse.data);
         });
 
         response.data.on('end', () =>
@@ -93,31 +85,20 @@ export class ProPresenter {
     const setupStream = async (): Promise<void> => {
       try {
         console.log('Connecting to ProPresenter focused presentation stream...');
-        const response = await httpClient.get('/v1/presentation/slide_index', {
-          params: {
-            chunked: true,
-          },
-          responseType: 'stream',
-        });
+        const response = await httpClient.get('/v1/presentation/slide_index', chunkedRequestConfig);
 
         console.log('Connecting to ProPresenter focused presentation stream...');
-        response.data.on('data', async (chunk: Buffer) => {
-          try {
-            const data = chunk.toString();
-            const slide: PresentationSlideIndex = JSON.parse(data);
 
-            if (slide.presentation_index) {
-              console.log('Received slide index:', slide.presentation_index.index);
-              return callback(slide.presentation_index.index);
-            }
+        this.onData<PresentationSlideIndex>(response, (slide) => {
+          if (slide.presentation_index) {
+            console.log('Received slide index:', slide.presentation_index.index);
 
-            console.log('Received null slide index');
-
-            callback(null);
-          } catch (parseError) {
-            console.error('Error parsing slide data:', parseError);
-            // Continue listening even if one message failed to parse
+            return callback(slide.presentation_index.index);
           }
+
+          console.log('Received null slide index');
+
+          callback(null);
         });
 
         response.data.on('end', () =>
@@ -144,16 +125,15 @@ export class ProPresenter {
     const setupStream = async (): Promise<void> => {
       try {
         console.log('Connecting to ProPresenter slide stream...');
-        const response = await httpClient.get('/v1/transport/presentation/current', {
-          params: {
-            chunked: true,
-          },
-          responseType: 'stream',
-        });
+        const response = await httpClient.get('/v1/transport/presentation/current', chunkedRequestConfig);
 
         console.log('Connected to ProPresenter slide stream successfully');
 
-        response.data.on('data', (chunk: Buffer) => this.onSlideDataCallback(chunk, callback));
+        this.onData<Slide>(response, (slide) => {
+          console.log('Received slide:', slide.name);
+
+          callback(slide.name);
+        });
 
         response.data.on('end', () =>
           this.retry({ setupStream, logMessage: 'Slide stream ended. Reconnecting...', callback: () => callback('') }),
@@ -175,16 +155,11 @@ export class ProPresenter {
     const setupStream = async (): Promise<void> => {
       try {
         console.log('Connecting to ProPresenter audience screen status...');
-        const response = await httpClient.get('/v1/status/audience_screens', {
-          params: {
-            chunked: true,
-          },
-          responseType: 'stream',
-        });
+        const response = await httpClient.get('/v1/status/audience_screens', chunkedRequestConfig);
 
         console.log('Connected to ProPresenter audience screen status successfully');
 
-        response.data.on('data', (chunk: Buffer) => this.onPublicStateDataCallback(chunk, callback));
+        this.onData<boolean>(response, callback);
 
         response.data.on('end', () =>
           this.retry({
@@ -206,29 +181,16 @@ export class ProPresenter {
     await setupStream();
   }
 
-  private onSlideDataCallback = (chunk: Buffer, callback: SlideCallback) => {
-    try {
-      const data = chunk.toString();
-      const slide: Slide = JSON.parse(data);
-
-      console.log('Received slide:', slide.name);
-
-      callback(slide.name);
-    } catch (parseError) {
-      console.error('Error parsing slide data:', parseError);
-      // Continue listening even if one message failed to parse
-    }
-  };
-
-  private onPublicStateDataCallback = (chunk: Buffer, callback: PublicStateCallback) => {
-    try {
-      const data = chunk.toString();
-      const active: boolean = JSON.parse(data);
-      callback(active);
-    } catch (parseError) {
-      console.error('Error parsing status data:', parseError);
-      // Continue listening even if one message failed to parse
-    }
+  private onData = <TResult>(response: AxiosResponse, callback: (data: TResult) => void) => {
+    response.data.on('data', async (chunk: Buffer) => {
+      try {
+        const data: TResult = JSON.parse(chunk.toString());
+        callback(data);
+      } catch (parseError) {
+        console.error('Error parsing chunk', parseError);
+        // Continue listening even if one message failed to parse
+      }
+    });
   };
 
   private retry = ({ callback, setupStream, logMessage }: RetryParams) => {

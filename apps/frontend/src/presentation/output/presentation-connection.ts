@@ -10,6 +10,19 @@ interface Presentation {
   imageUrl: string;
   enabled: boolean;
 }
+
+interface Slide {
+  enabled: boolean;
+  label: string;
+  notes: string;
+  text: string;
+}
+
+export interface CurrentSlideDto {
+  currentSlide?: Slide | null;
+  displayEnabled?: boolean;
+}
+
 export interface CurrentPresentationDto {
   presentation?: Presentation | null;
   displayEnabled?: boolean;
@@ -27,19 +40,29 @@ export const usePresentationConnection = () => {
     displayEnabled: false,
   });
 
+  const [currentSlide, setCurentSlide] = useState<CurrentSlideDto>({
+    displayEnabled: false,
+  });
+
   useEffect(() => {
     socket.on('slide', (data: CurrentPresentationDto) => {
       console.log('Slide data:', data);
       setCurrentPresentation(data);
+    });
+
+    socket.on('music-slide', (data: CurrentSlideDto) => {
+      console.log('music slide data', data);
+      setCurentSlide(data);
     });
   }, []);
 
   const memoizedValues = useMemo(
     () => ({
       currentPresentation,
+      currentSlide,
       socket,
     }),
-    [currentPresentation],
+    [currentPresentation, currentSlide],
   );
 
   return memoizedValues;

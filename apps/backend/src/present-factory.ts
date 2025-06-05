@@ -1,8 +1,6 @@
 import { env } from './config';
 import { FilePresentationRepository, ProPresenter } from './infrastructure';
-import { LocalPersistence } from './presentaions/local-persistence';
-import { BannerPresentation } from './presentaions/banner-presentation';
-import { MusicPresentation } from './presentaions/music-presentation';
+import { BannerPresentation, LocalPersistence, MusicPresentation } from './presentations';
 
 const { jsonPath } = env.db;
 

@@ -1,35 +1,48 @@
-import { CurrentPresentation } from '@/models';
+import type { Presentation } from '@/models';
 import type { ProPresenter } from '../infrastructure';
 import type { PresentationRepository } from '../infrastructure/db';
 import type { IPresentation } from './local-persistence';
+import { io } from '@/server';
+
+export interface CurrentPresentationDto {
+  presentation?: Presentation | null;
+  displayEnabled?: boolean;
+}
 
 export class BannerPresentation implements IPresentation {
-  currentPresentation = new CurrentPresentation();
+  presentation?: Presentation | null;
+  displayEnabled = false;
 
   constructor(
     private readonly presentationRepository: PresentationRepository,
     private readonly proPresenter: ProPresenter,
   ) {}
-  setDisplayEnabled(displayEnabled: boolean): void {
-    this.currentPresentation.setDisplayEnabled(displayEnabled);
-  }
 
   async execute(): Promise<void> {
-    this.proPresenter.onSlideChange(this.onSlideChangeHook);
+    this.proPresenter.onSlideChange(this.setPresentation);
 
-    this.proPresenter.onPublicStateChange(this.onPublicStateChangeHook);
+    this.proPresenter.onPublicStateChange(this.setDisplayEnabled);
   }
 
-  private onSlideChangeHook = async (code: string) => {
-    const presentation = await this.presentationRepository.getPresentationByCode(code);
-    this.currentPresentation.setPresentation(presentation ?? null);
+  private setPresentation = async (code: string) => {
+    this.presentation = await this.presentationRepository.getPresentationByCode(code);
+
+    this.emit();
   };
 
-  private onPublicStateChangeHook = async (enabled: boolean) => {
-    this.currentPresentation.setDisplayEnabled(enabled);
+  setDisplayEnabled = async (displayEnabled: boolean): Promise<void> => {
+    this.displayEnabled = displayEnabled;
+    this.emit();
   };
 
   public emit(): void {
-    this.currentPresentation.emitCurrentPresentation();
+    io.emit('slide', this.toJSON());
+  }
+
+  private toJSON(): CurrentPresentationDto {
+    return {
+      presentation: this.presentation,
+      displayEnabled: this.displayEnabled,
+    };
   }
 }

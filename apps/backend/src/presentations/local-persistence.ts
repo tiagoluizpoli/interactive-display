@@ -1,4 +1,5 @@
 export interface IPresentation {
+  displayEnabled: boolean;
   execute: () => Promise<void>;
   setDisplayEnabled: (displayEnabled: boolean) => void;
   emit: () => void;

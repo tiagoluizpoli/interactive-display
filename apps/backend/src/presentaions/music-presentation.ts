@@ -1,4 +1,4 @@
-import type { PresentationRepository, ProPresenter } from '@/infrastructure';
+import type { ProPresenter } from '@/infrastructure';
 import { CurrentMusic } from '@/models/current-music';
 import type { Music } from '@/models/music';
 
@@ -6,10 +6,7 @@ import type { IPresentation } from '@/presentaions/local-persistence';
 
 export class MusicPresentation implements IPresentation {
   currentMusic = new CurrentMusic();
-  constructor(
-    private readonly presentationRepository: PresentationRepository,
-    private readonly proPresenter: ProPresenter,
-  ) {}
+  constructor(private readonly proPresenter: ProPresenter) {}
   async execute(): Promise<void> {
     this.proPresenter.onPresentationFocusedChanged(this.setMusic);
 

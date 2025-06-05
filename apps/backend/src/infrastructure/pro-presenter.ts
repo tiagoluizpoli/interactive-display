@@ -107,7 +107,7 @@ export class ProPresenter {
             const slide: PresentationSlideIndex = JSON.parse(data);
 
             if (slide.presentation_index) {
-              console.log('Received slide index:', slide.presentation_index?.index);
+              console.log('Received slide index:', slide.presentation_index.index);
               return callback(slide.presentation_index.index);
             }
 

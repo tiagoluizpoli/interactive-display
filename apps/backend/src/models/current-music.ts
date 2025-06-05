@@ -28,7 +28,7 @@ export class CurrentMusic {
       return;
     }
 
-    this.currentSlide = slideIndex ? this.music.presentation.groups[0].slides[slideIndex] : null;
+    this.currentSlide = slideIndex !== null ? this.music.presentation.groups[0].slides[slideIndex] : null;
 
     console.log(this.toJSON());
     this.emit();

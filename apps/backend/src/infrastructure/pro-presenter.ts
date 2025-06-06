@@ -36,6 +36,11 @@ interface RetryParams {
 
 type SetupStream = (retries?: number) => Promise<void>;
 
+export interface PresentationSlideIndexParams {
+  slideIndex: number;
+  presentationUuid: string;
+}
+
 const chunkedRequestConfig: AxiosRequestConfig = {
   params: {
     chunked: true,
@@ -81,7 +86,9 @@ export class ProPresenter {
     await setupStream();
   }
 
-  async onPresentationSlideIndexChanged(callback: (slideIndex: number | null) => void): Promise<void> {
+  async onPresentationSlideIndexChanged(
+    callback: (params: PresentationSlideIndexParams | null) => void,
+  ): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
         console.log('Connecting to ProPresenter focused presentation stream...');
@@ -93,7 +100,10 @@ export class ProPresenter {
           if (slide.presentation_index) {
             console.log('Received slide index:', slide.presentation_index.index);
 
-            return callback(slide.presentation_index.index);
+            return callback({
+              slideIndex: slide.presentation_index.index,
+              presentationUuid: slide.presentation_index.presentation_id.uuid,
+            });
           }
 
           console.log('Received null slide index');

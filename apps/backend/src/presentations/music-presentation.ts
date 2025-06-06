@@ -1,4 +1,4 @@
-import type { ProPresenter } from '@/infrastructure';
+import type { PresentationSlideIndexParams, ProPresenter } from '@/infrastructure';
 
 import type { Music, Slide } from '@/models/music';
 import type { IPresentation } from './local-persistence';
@@ -18,23 +18,27 @@ export class MusicPresentation implements IPresentation {
   async execute(): Promise<void> {
     this.proPresenter.onPresentationFocusedChanged(this.setMusic);
 
-    this.proPresenter.onPresentationSlideIndexChanged(this.setCurrentSlide);
-
     this.proPresenter.onPublicStateChange(this.setDisplayEnabled);
   }
 
   private setMusic = async (music: Music | null): Promise<void> => {
     this.music = music;
+    this.proPresenter.onPresentationSlideIndexChanged(this.setCurrentSlide);
   };
 
-  private setCurrentSlide = async (slideIndex: number | null): Promise<void> => {
-    if (!this.music) {
+  private setCurrentSlide = async (params: PresentationSlideIndexParams | null): Promise<void> => {
+    if (!this.music || !params) {
+      console.log('no music');
       this.currentSlide = null;
       this.emit();
       return;
     }
+    const { presentationUuid, slideIndex } = params;
 
-    this.currentSlide = slideIndex !== null ? this.music.presentation.groups[0].slides[slideIndex] : null;
+    this.currentSlide =
+      presentationUuid === this.music.presentation.id.uuid
+        ? this.music.presentation.groups[0].slides[slideIndex]
+        : null;
 
     this.emit();
   };

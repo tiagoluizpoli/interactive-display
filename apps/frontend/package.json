@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
-    "dev:preview": "vite preview",
+    "preview": "vite preview --host",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit"

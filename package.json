@@ -10,7 +10,7 @@
     "dev:back": "cd apps/backend && yarn dev",
     "dev": "concurrently --kill-others-on-fail \"yarn dev:front\" \"yarn dev:back\"",
     "build": "cd apps/frontend && yarn build && cd ../backend && yarn build",
-    "start:front": "serve apps/frontend/dist",
+    "start:front": "cd apps/frontend && yarn preview",
     "start:back": "cd apps/backend && yarn start",
     "start": "concurrently --kill-others-on-fail \"yarn start:front\" \"yarn start:back\"",
     "lint": "biome check .",
@@ -30,7 +30,6 @@
     "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",
     "tsx": "^4.19.4",
-    "serve": "^14.2.4",
     "typescript": "^5.8.3"
   }
 }

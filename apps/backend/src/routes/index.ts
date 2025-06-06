@@ -22,6 +22,5 @@ router.get('/send-message', (_, res) => {
 });
 
 const staticPath = path.join(__dirname, '..', '..', 'files');
-console.log('staticPath', staticPath);
 
 router.use('/files', express.static('D:/files'));

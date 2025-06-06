@@ -28,7 +28,6 @@ export class MusicPresentation implements IPresentation {
 
   private setCurrentSlide = async (params: PresentationSlideIndexParams | null): Promise<void> => {
     if (!this.music || !params) {
-      console.log('no music');
       this.currentSlide = null;
       this.emit();
       return;

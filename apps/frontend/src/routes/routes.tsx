@@ -3,10 +3,10 @@ import App from '@/src/app';
 
 import { Layotut1, Layout2 } from '@/src/presentation';
 
-const layoutRouteNames = {
+export const layoutRouteNames = {
   baseRoute: '/',
   layout1: '/layout-1',
-  Layotut2: '/layout-2'
+  Layout2: '/layout-2',
 };
 
 export const router = createBrowserRouter([
@@ -19,7 +19,7 @@ export const router = createBrowserRouter([
     element: <Layotut1 />,
   },
   {
-    path: layoutRouteNames.Layotut2,
-    element: <Layout2 />
-  }
+    path: layoutRouteNames.Layout2,
+    element: <Layout2 />,
+  },
 ]);

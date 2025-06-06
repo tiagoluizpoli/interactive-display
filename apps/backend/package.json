@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --project tsconfig.node.json",
+    "build": "tsup src --clean",
+    "start": "node dist/server.js",
     "dev:playground": "tsx watch src/playground/index.ts",
     "lint": "biome check .",
-    "lint:fix": "biome check --write ."
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,7 @@
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
     "globals": "^16.0.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3"
   }
 }

@@ -1,5 +1,5 @@
 import type { DefaultEventsMap, Server } from 'socket.io';
-import type { LocalPersistence } from './presentaions/local-persistence';
+import type { LocalPersistence } from './presentations';
 
 export const setupSocketIoHooks = (
   io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,

@@ -1,10 +1,6 @@
 import path from 'node:path';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import express, { Router } from 'express';
 import { io } from '../server';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export const router = Router();
 

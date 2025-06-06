@@ -1,8 +1,8 @@
 export interface Music {
-  presentation: Presentation;
+  presentation: MusicPresentation;
 }
 
-export interface Presentation {
+export interface MusicPresentation {
   id: Id;
   destination: string;
   groups: Group[];

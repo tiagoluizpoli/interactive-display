@@ -17,8 +17,6 @@ export class MusicPresentation implements IPresentation {
 
   async execute(): Promise<void> {
     this.proPresenter.onPresentationFocusedChanged(this.setMusic);
-
-    this.proPresenter.onPublicStateChange(this.setDisplayEnabled);
   }
 
   private setMusic = async (music: Music | null): Promise<void> => {

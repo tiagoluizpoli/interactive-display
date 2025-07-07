@@ -17,8 +17,6 @@ export class MusicPresentation implements IPresentation {
 
   async execute(): Promise<void> {
     this.proPresenter.onPresentationFocusedChanged(this.setMusic);
-
-    this.proPresenter.onPublicStateChange(this.setDisplayEnabled);
   }
 
   private setMusic = async (music: Music | null): Promise<void> => {
@@ -28,7 +26,6 @@ export class MusicPresentation implements IPresentation {
 
   private setCurrentSlide = async (params: PresentationSlideIndexParams | null): Promise<void> => {
     if (!this.music || !params) {
-      console.log('no music');
       this.currentSlide = null;
       this.emit();
       return;

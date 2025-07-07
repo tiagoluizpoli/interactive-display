@@ -9,6 +9,9 @@ export default defineConfig({
   server: {
     port: 5001,
   },
+  preview: {
+    port: 5001,
+  },
   resolve: {
     alias: {
       '@/src': path.resolve(process.cwd(), './src'),

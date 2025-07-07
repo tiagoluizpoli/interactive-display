@@ -53,14 +53,14 @@ export class ProPresenter {
   async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
-        console.log('Connecting to ProPresenter focused presentation stream...');
-        const response = await httpClient.get('/v1/presentation/focused', chunkedRequestConfig);
+        const route = '/v1/presentation/focused';
 
-        console.log('Connecting to ProPresenter focused presentation stream...');
+        console.log(`Connecting to ProPresenter ${route} stream...`);
+        const response = await httpClient.get(route, chunkedRequestConfig);
+
+        console.log(`Connected to ProPresenter ${route} stream successfully`);
 
         this.onData<PresentationId>(response, async (slide) => {
-          console.log('Received presentation:', slide.name);
-
           const musicResponse = await httpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
 
           callback(musicResponse.data);
@@ -91,22 +91,21 @@ export class ProPresenter {
   ): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
-        console.log('Connecting to ProPresenter focused presentation stream...');
-        const response = await httpClient.get('/v1/presentation/slide_index', chunkedRequestConfig);
+        const route = '/v1/presentation/slide_index';
 
-        console.log('Connecting to ProPresenter focused presentation stream...');
+        console.log(`Connecting to ProPresenter ${route} stream...`);
+
+        const response = await httpClient.get(route, chunkedRequestConfig);
+
+        console.log(`Connected to ProPresenter ${route} stream successfully`);
 
         this.onData<PresentationSlideIndex>(response, (slide) => {
           if (slide.presentation_index) {
-            console.log('Received slide index:', slide.presentation_index.index);
-
             return callback({
               slideIndex: slide.presentation_index.index,
               presentationUuid: slide.presentation_index.presentation_id.uuid,
             });
           }
-
-          console.log('Received null slide index');
 
           callback(null);
         });
@@ -134,14 +133,14 @@ export class ProPresenter {
   async onSlideChange(callback: (code: string) => void): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
-        console.log('Connecting to ProPresenter slide stream...');
-        const response = await httpClient.get('/v1/transport/presentation/current', chunkedRequestConfig);
+        const route = '/v1/transport/presentation/current';
 
-        console.log('Connected to ProPresenter slide stream successfully');
+        console.log(`Connecting to ProPresenter ${route} stream...`);
+        const response = await httpClient.get(route, chunkedRequestConfig);
+
+        console.log(`Connected to ProPresenter ${route} stream successfully`);
 
         this.onData<Slide>(response, (slide) => {
-          console.log('Received slide:', slide.name);
-
           callback(slide.name);
         });
 
@@ -164,10 +163,12 @@ export class ProPresenter {
   async onPublicStateChange(callback: (state: boolean) => void): Promise<void> {
     const setupStream = async (): Promise<void> => {
       try {
-        console.log('Connecting to ProPresenter audience screen status...');
-        const response = await httpClient.get('/v1/status/audience_screens', chunkedRequestConfig);
+        const route = '/v1/status/audience_screens';
 
-        console.log('Connected to ProPresenter audience screen status successfully');
+        console.log(`Connecting to ProPresenter ${route} status...`);
+        const response = await httpClient.get(route, chunkedRequestConfig);
+
+        console.log(`Connected to ProPresenter ${route} status successfully`);
 
         this.onData<boolean>(response, callback);
 

@@ -11,7 +11,7 @@ export const makePresentations = () => {
   const bannerPresentation = new BannerPresentation(presentationRepository, proPresenter);
   const musicPresentation = new MusicPresentation(proPresenter);
 
-  const localPersistence = new LocalPersistence([bannerPresentation, musicPresentation]);
+  const localPersistence = new LocalPersistence([bannerPresentation, musicPresentation], proPresenter);
 
   return localPersistence;
 };

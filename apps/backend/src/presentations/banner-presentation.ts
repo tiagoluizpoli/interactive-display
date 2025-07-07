@@ -20,8 +20,6 @@ export class BannerPresentation implements IPresentation {
 
   async execute(): Promise<void> {
     this.proPresenter.onSlideChange(this.setPresentation);
-
-    this.proPresenter.onPublicStateChange(this.setDisplayEnabled);
   }
 
   private setPresentation = async (code: string) => {

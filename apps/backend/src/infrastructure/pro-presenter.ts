@@ -1,6 +1,7 @@
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { httpClient } from '../config';
+import { proPresenterHttpClient } from '../config';
 import type { Music } from '@/models/music';
+import type { Readable } from 'node:stream';
 
 export interface Slide {
   is_playing: boolean;
@@ -32,6 +33,7 @@ interface RetryParams {
   setupStream: SetupStream;
   callback?: ClearPresentationCallback;
   logMessage?: string;
+  stopped: boolean;
 }
 
 type SetupStream = (retries?: number) => Promise<void>;
@@ -41,6 +43,10 @@ export interface PresentationSlideIndexParams {
   presentationUuid: string;
 }
 
+export interface StreamSubscription {
+  destroy: () => void;
+}
+
 const chunkedRequestConfig: AxiosRequestConfig = {
   params: {
     chunked: true,
@@ -48,148 +54,109 @@ const chunkedRequestConfig: AxiosRequestConfig = {
   responseType: 'stream',
 };
 export class ProPresenter {
-  private readonly RETRY_DELAY = 3000; // 2 seconds
+  private readonly RETRY_DELAY = 3000; // 3 seconds
 
-  async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<void> {
-    const setupStream = async (): Promise<void> => {
-      try {
-        const route = '/v1/presentation/focused';
-
-        console.log(`Connecting to ProPresenter ${route} stream...`);
-        const response = await httpClient.get(route, chunkedRequestConfig);
-
-        console.log(`Connected to ProPresenter ${route} stream successfully`);
-
-        this.onData<PresentationId>(response, async (slide) => {
-          const musicResponse = await httpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
-
+  async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<StreamSubscription> {
+    return this.createStreamSubscription(
+      '/v1/presentation/focused',
+      async (slide: PresentationId) => {
+        try {
+          const musicResponse = await proPresenterHttpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
           callback(musicResponse.data);
-        });
-
-        response.data.on('end', () =>
-          this.retry({
-            setupStream,
-            logMessage: 'Slide stream ended. Reconnecting...',
-            callback: () => callback(null),
-          }),
-        );
-
-        response.data.on('error', (err: any) =>
-          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback(null) }),
-        );
-      } catch (error) {
-        this.onError(error, setupStream, () => callback(null));
-      }
-    };
-
-    // Start the connection process
-    await setupStream();
+        } catch (error) {
+          console.error('Error fetching presentation details:', error);
+        }
+      },
+      () => callback(null),
+    );
   }
 
   async onPresentationSlideIndexChanged(
     callback: (params: PresentationSlideIndexParams | null) => void,
-  ): Promise<void> {
+  ): Promise<StreamSubscription> {
+    return this.createStreamSubscription<PresentationSlideIndex>(
+      '/v1/presentation/slide_index',
+      (slide) => {
+        if (slide.presentation_index) {
+          return callback({
+            slideIndex: slide.presentation_index.index,
+            presentationUuid: slide.presentation_index.presentation_id.uuid,
+          });
+        }
+        callback(null);
+      },
+      () => callback(null),
+    );
+  }
+
+  async onSlideChange(callback: (code: string) => void): Promise<StreamSubscription> {
+    return this.createStreamSubscription<Slide>(
+      '/v1/transport/presentation/current',
+      (slide) => {
+        callback(slide.name);
+      },
+      () => callback(''),
+    );
+  }
+
+  async onPublicStateChange(callback: (state: boolean) => void): Promise<StreamSubscription> {
+    return this.createStreamSubscription<boolean>('/v1/status/audience_screens', callback, () => callback(false));
+  }
+
+  private async createStreamSubscription<TResult>(
+    route: string,
+    dataCallback: (data: TResult) => void,
+    cleanupCallback: ClearPresentationCallback,
+  ): Promise<StreamSubscription> {
+    let stream: Readable | null = null;
+    let stopped = false;
+
     const setupStream = async (): Promise<void> => {
+      if (stopped) return;
       try {
-        const route = '/v1/presentation/slide_index';
-
         console.log(`Connecting to ProPresenter ${route} stream...`);
-
-        const response = await httpClient.get(route, chunkedRequestConfig);
-
+        const response = await proPresenterHttpClient.get(route, chunkedRequestConfig);
+        stream = response.data;
         console.log(`Connected to ProPresenter ${route} stream successfully`);
 
-        this.onData<PresentationSlideIndex>(response, (slide) => {
-          if (slide.presentation_index) {
-            return callback({
-              slideIndex: slide.presentation_index.index,
-              presentationUuid: slide.presentation_index.presentation_id.uuid,
-            });
+        this.onData<TResult>(response, (data) => {
+          if (!stopped) {
+            dataCallback(data);
           }
-
-          callback(null);
         });
 
-        response.data.on('end', () =>
+        stream!.on('end', () =>
           this.retry({
             setupStream,
-            logMessage: 'Slide stream ended. Reconnecting...',
-            callback: () => callback(null),
+            logMessage: `Stream ended. Reconnecting to ${route}...`,
+            stopped,
+            callback: cleanupCallback,
           }),
         );
-
-        response.data.on('error', (err: any) =>
-          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback(null) }),
-        );
-      } catch (error) {
-        this.onError(error, setupStream, () => callback(null));
-      }
-    };
-
-    // Start the connection process
-    await setupStream();
-  }
-
-  async onSlideChange(callback: (code: string) => void): Promise<void> {
-    const setupStream = async (): Promise<void> => {
-      try {
-        const route = '/v1/transport/presentation/current';
-
-        console.log(`Connecting to ProPresenter ${route} stream...`);
-        const response = await httpClient.get(route, chunkedRequestConfig);
-
-        console.log(`Connected to ProPresenter ${route} stream successfully`);
-
-        this.onData<Slide>(response, (slide) => {
-          callback(slide.name);
-        });
-
-        response.data.on('end', () =>
-          this.retry({ setupStream, logMessage: 'Slide stream ended. Reconnecting...', callback: () => callback('') }),
-        );
-
-        response.data.on('error', (err: any) =>
-          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback('') }),
-        );
-      } catch (error) {
-        this.onError(error, setupStream, () => callback(''));
-      }
-    };
-
-    // Start the connection process
-    await setupStream();
-  }
-
-  async onPublicStateChange(callback: (state: boolean) => void): Promise<void> {
-    const setupStream = async (): Promise<void> => {
-      try {
-        const route = '/v1/status/audience_screens';
-
-        console.log(`Connecting to ProPresenter ${route} status...`);
-        const response = await httpClient.get(route, chunkedRequestConfig);
-
-        console.log(`Connected to ProPresenter ${route} status successfully`);
-
-        this.onData<boolean>(response, callback);
-
-        response.data.on('end', () =>
+        stream!.on('error', (err: any) =>
           this.retry({
             setupStream,
-            logMessage: 'Status stream ended. Reconnecting...',
-            callback: () => callback(false),
+            logMessage: `Stream error on ${route}: ${err}`,
+            stopped,
+            callback: cleanupCallback,
           }),
         );
-
-        response.data.on('error', (err: any) =>
-          this.retry({ setupStream, logMessage: `Stream error: ${err}`, callback: () => callback(false) }),
-        );
       } catch (error) {
-        this.onError(error, setupStream, () => callback(false));
+        if (stopped) return;
+        this.onError(error, setupStream, cleanupCallback);
       }
     };
 
-    // Start the connection process
     await setupStream();
+
+    return {
+      destroy: () => {
+        stopped = true;
+        if (stream) {
+          stream.destroy();
+        }
+      },
+    };
   }
 
   private onData = <TResult>(response: AxiosResponse, callback: (data: TResult) => void) => {
@@ -199,12 +166,12 @@ export class ProPresenter {
         callback(data);
       } catch (parseError) {
         console.error('Error parsing chunk', parseError);
-        // Continue listening even if one message failed to parse
       }
     });
   };
 
-  private retry = ({ callback, setupStream, logMessage }: RetryParams) => {
+  private retry = ({ callback, setupStream, logMessage, stopped }: RetryParams) => {
+    if (stopped) return;
     if (callback) callback();
     if (logMessage) console.log(logMessage);
     setTimeout(() => setupStream(), this.RETRY_DELAY);
@@ -218,7 +185,8 @@ export class ProPresenter {
     if (isConnectionRefused) {
       this.retry({
         setupStream,
-        logMessage: `ProPresenter connection refused. Retrying in ${this.RETRY_DELAY} seconds...`,
+        logMessage: `ProPresenter connection refused. Retrying in ${this.RETRY_DELAY}ms...`,
+        stopped: false,
       });
     } else {
       console.error('Error connecting to ProPresenter:', {
@@ -226,8 +194,7 @@ export class ProPresenter {
         code: axiosError.code,
         status: axiosError.response?.status,
       });
-      // For other errors, still retry but with base delay
-      this.retry({ setupStream, callback });
+      this.retry({ setupStream, callback, stopped: false });
     }
   };
 }

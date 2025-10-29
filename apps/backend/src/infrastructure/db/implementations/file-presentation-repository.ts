@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Presentation } from '../../../models';
 import type { PresentationRepository } from '../presentation-repository';
@@ -10,59 +10,44 @@ export interface JsonDbSchema {
 }
 
 export class FilePresentationRepository implements PresentationRepository {
+  private db: JsonDbSchema | null = null;
+
   constructor(private readonly jsonPath: string) {}
-  getPresentationByCode(code: string): Promise<Presentation | undefined> {
-    const db = this.readFile();
 
-    const presentation = db.presentations.find((presentation) => presentation.code === code);
+  async connect(): Promise<void> {
+    await this.initializeDbFile();
+    const fileContent = await fs.readFile(this.jsonPath, 'utf-8');
+    this.db = JSON.parse(fileContent);
+  }
 
-    if (!presentation) {
-      return Promise.resolve(undefined);
+  async getPresentationByCode(code: string): Promise<Presentation | undefined> {
+    if (!this.db) {
+      await this.connect();
     }
-
-    return Promise.resolve(presentation);
+    const presentation = this.db!.presentations.find((p) => p.code === code);
+    return presentation;
   }
 
-  create(presentation: Presentation): Promise<void> {
-    const db = this.readFile();
-    db.presentations.push(presentation);
-    fs.writeFileSync(this.jsonPath, JSON.stringify(db, null, 2));
-
-    return Promise.resolve();
+  async create(presentation: Presentation): Promise<void> {
+    if (!this.db) {
+      await this.connect();
+    }
+    this.db!.presentations.push(presentation);
+    await fs.writeFile(this.jsonPath, JSON.stringify(this.db, null, 2));
   }
 
-  private readFile() {
+  private async initializeDbFile(): Promise<void> {
     try {
-      // Check if the file exists
-      if (!fs.existsSync(this.jsonPath)) {
-        // Create the directory if it doesn't exist
-        const dir = path.dirname(this.jsonPath);
-
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-
-        // Create the file with an empty array
-        fs.writeFileSync(
-          this.jsonPath,
-          JSON.stringify(
-            {
-              presentations: [],
-              displayEnabled: false,
-              currentPresentation: null,
-            } as JsonDbSchema,
-            null,
-            2,
-          ),
-        );
-      }
-
-      // Read and parse the file
-      const fileContent = fs.readFileSync(this.jsonPath, 'utf-8');
-      return JSON.parse(fileContent) as JsonDbSchema;
-    } catch (error) {
-      console.error(`Error reading JSON file: ${error}`);
-      throw error;
+      await fs.access(this.jsonPath);
+    } catch {
+      const dir = path.dirname(this.jsonPath);
+      await fs.mkdir(dir, { recursive: true });
+      const initialDb: JsonDbSchema = {
+        presentations: [],
+        displayEnabled: false,
+        currentPresentation: null,
+      };
+      await fs.writeFile(this.jsonPath, JSON.stringify(initialDb, null, 2));
     }
   }
 }

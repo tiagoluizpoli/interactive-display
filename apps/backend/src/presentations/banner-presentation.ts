@@ -1,5 +1,5 @@
 import type { Presentation } from '@/models';
-import type { ProPresenter } from '../infrastructure';
+import type { ProPresenter, StreamSubscription } from '../infrastructure';
 import type { PresentationRepository } from '../infrastructure/db';
 import type { IPresentation } from './local-persistence';
 import { io } from '@/server';
@@ -12,6 +12,7 @@ export interface CurrentPresentationDto {
 export class BannerPresentation implements IPresentation {
   presentation?: Presentation | null;
   displayEnabled = false;
+  private subscription?: StreamSubscription;
 
   constructor(
     private readonly presentationRepository: PresentationRepository,
@@ -19,7 +20,11 @@ export class BannerPresentation implements IPresentation {
   ) {}
 
   async execute(): Promise<void> {
-    this.proPresenter.onSlideChange(this.setPresentation);
+    this.subscription = await this.proPresenter.onSlideChange(this.setPresentation);
+  }
+
+  destroy(): void {
+    this.subscription?.destroy();
   }
 
   private setPresentation = async (code: string) => {

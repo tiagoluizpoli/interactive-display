@@ -1,4 +1,4 @@
-import type { PresentationSlideIndexParams, ProPresenter } from '@/infrastructure';
+import type { PresentationSlideIndexParams, ProPresenter, StreamSubscription } from '@/infrastructure';
 
 import type { Music, Slide } from '@/models/music';
 import type { IPresentation } from './local-persistence';
@@ -12,16 +12,27 @@ export class MusicPresentation implements IPresentation {
   music?: Music | null;
   currentSlide?: Slide | null;
   displayEnabled = false;
+  private slides: Slide[] = [];
+  private subscriptions: StreamSubscription[] = [];
 
   constructor(private readonly proPresenter: ProPresenter) {}
 
   async execute(): Promise<void> {
-    this.proPresenter.onPresentationFocusedChanged(this.setMusic);
+    this.subscriptions.push(await this.proPresenter.onPresentationFocusedChanged(this.setMusic));
+  }
+
+  destroy(): void {
+    this.subscriptions.forEach((s) => s.destroy());
   }
 
   private setMusic = async (music: Music | null): Promise<void> => {
     this.music = music;
-    this.proPresenter.onPresentationSlideIndexChanged(this.setCurrentSlide);
+    this.slides =
+      this.music?.presentation.groups.reduce<Slide[]>((acc, curr) => {
+        acc.push(...curr.slides);
+        return acc;
+      }, []) ?? [];
+    this.subscriptions.push(await this.proPresenter.onPresentationSlideIndexChanged(this.setCurrentSlide));
   };
 
   private setCurrentSlide = async (params: PresentationSlideIndexParams | null): Promise<void> => {
@@ -32,10 +43,7 @@ export class MusicPresentation implements IPresentation {
     }
     const { presentationUuid, slideIndex } = params;
 
-    this.currentSlide =
-      presentationUuid === this.music.presentation.id.uuid
-        ? this.music.presentation.groups[0].slides[slideIndex]
-        : null;
+    this.currentSlide = presentationUuid === this.music.presentation.id.uuid ? this.slides[slideIndex] : null;
 
     this.emit();
   };

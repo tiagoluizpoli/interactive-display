@@ -14,6 +14,14 @@ const envSchema = z.object({
   SERVICES_PRO_PRESENTER_HOST: z.string(),
   SERVICES_PRO_PRESENTER_PORT: z.string(),
 
+  SERVICES_HOLYRICS_URL: z.string(),
+  SERVICES_HOLYRICS_TIMEOUT: z.coerce.number(),
+  SERVICES_HOLYRICS_RETRY_TIME: z.coerce.number(),
+  SERVICES_HOLYRICS_POLLING_INTERVAL_MS: z.coerce.number(),
+  SERVICES_HOLYRICS_REFERENCE_SELECTOR: z.string(),
+  SERVICES_HOLYRICS_TEXT_SELECTOR: z.string(),
+  SERVICES_HOLYRICS_VERSION_SELECTOR: z.string(),
+
   DB_JSON_PATH: z.string(),
 });
 
@@ -52,6 +60,17 @@ export const env = {
     proPresenter: {
       host: parsedEnv.data.SERVICES_PRO_PRESENTER_HOST,
       port: Number(parsedEnv.data.SERVICES_PRO_PRESENTER_PORT),
+    },
+    holyrics: {
+      url: parsedEnv.data.SERVICES_HOLYRICS_URL,
+      timeout: parsedEnv.data.SERVICES_HOLYRICS_TIMEOUT,
+      retryTime: parsedEnv.data.SERVICES_HOLYRICS_RETRY_TIME,
+      pollingIntervalMs: parsedEnv.data.SERVICES_HOLYRICS_POLLING_INTERVAL_MS,
+      selectors: {
+        referenceSelector: parsedEnv.data.SERVICES_HOLYRICS_REFERENCE_SELECTOR,
+        textSelectoor: parsedEnv.data.SERVICES_HOLYRICS_TEXT_SELECTOR,
+        versionSelector: parsedEnv.data.SERVICES_HOLYRICS_VERSION_SELECTOR,
+      },
     },
   },
   db: {

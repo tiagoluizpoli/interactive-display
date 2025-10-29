@@ -11,11 +11,17 @@ interface Presentation {
   enabled: boolean;
 }
 
-interface Slide {
+export interface Slide {
   enabled: boolean;
   label: string;
   notes: string;
   text: string;
+}
+
+export interface BibleSlide {
+  reference: string;
+  text: string;
+  version: string;
 }
 
 export interface CurrentSlideDto {
@@ -37,6 +43,8 @@ export const usePresentationConnection = () => {
     displayEnabled: false,
   });
 
+  const [bibleSlide, setBibleSlide] = useState<BibleSlide | null>(null);
+
   useEffect(() => {
     socket.on('slide', (data: CurrentPresentationDto) => {
       console.log('Slide data:', data);
@@ -47,14 +55,20 @@ export const usePresentationConnection = () => {
       console.log('music slide data', data);
       setCurentSlide(data);
     });
+
+    socket.on('bible-slide', (data: BibleSlide | null) => {
+      console.log('bible slide data', data);
+      setBibleSlide(data);
+    });
   }, []);
 
   const memoizedValues = useMemo(
     () => ({
       currentPresentation,
       currentSlide,
+      bibleSlide,
     }),
-    [currentPresentation, currentSlide],
+    [currentPresentation, currentSlide, bibleSlide],
   );
 
   return memoizedValues;

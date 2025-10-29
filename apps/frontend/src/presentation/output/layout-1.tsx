@@ -7,6 +7,7 @@ export const Layotut1 = () => {
   if (!presentation || !displayEnabled) {
     return <div />;
   }
+  
   return (
     <div className="w-screen h-screen flex flex-col justify-end">
       <div className="flex justify-between items-end ">

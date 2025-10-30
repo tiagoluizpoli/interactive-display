@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: backend
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    env_file:
+      - apps/backend/.env
+    restart: always
+    networks:
+      - church
+
+  frontend:
+    container_name: frontend
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - /app/node_modules
+      - /app/apps/frontend/node_modules
+    env_file:
+      - apps/frontend/.env
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - church
+
+networks:
+  church:
+    driver: bridge

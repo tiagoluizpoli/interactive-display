@@ -1,12 +1,10 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package.json yarn.lock ./
-COPY apps/frontend/package.json apps/frontend/yarn.lock ./apps/frontend/
-RUN yarn install --frozen-lockfile
-COPY apps/frontend/ ./apps/frontend/
+FROM node:20-slim AS build
 WORKDIR /app/apps/frontend
-RUN yarn global add typescript
+COPY apps/frontend/package.json ./package.json
+COPY apps/frontend/yarn.lock ./yarn.lock
+COPY apps/frontend/ ./
+RUN yarn install --frozen-lockfile
 RUN yarn build
 
 # Stage 2: Serve the application with Nginx

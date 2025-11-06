@@ -16,6 +16,11 @@ services:
     restart: always
     networks:
       - church
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "512M"
 
   frontend:
     container_name: frontend
@@ -34,6 +39,11 @@ services:
       - backend
     networks:
       - church
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "128M"
 
 networks:
   church:

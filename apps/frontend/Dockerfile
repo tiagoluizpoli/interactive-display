@@ -6,6 +6,7 @@ COPY apps/frontend/package.json apps/frontend/yarn.lock ./apps/frontend/
 RUN yarn install --frozen-lockfile
 COPY apps/frontend/ ./apps/frontend/
 WORKDIR /app/apps/frontend
+RUN yarn global add typescript
 RUN yarn build
 
 # Stage 2: Serve the application with Nginx

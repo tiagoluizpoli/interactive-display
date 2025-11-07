@@ -23,8 +23,13 @@
     "morgan": "^1.10.0",
     "puppeteer": "^24.26.1",
     "socket.io": "^4.8.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "tsx": "^4.19.4",
-    "uuid": "^11.1.0",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3",
+    "winston-graylog2": "^2.1.2",
+    "winston-transport": "^4.9.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

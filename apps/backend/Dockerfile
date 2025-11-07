@@ -29,9 +29,6 @@ RUN apt update && \
     libpangocairo-1.0-0 \
     libgtk-3-0
 
-# Configura as variáveis de ambiente necessárias para o Puppeteer
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/node_modules ./node_modules

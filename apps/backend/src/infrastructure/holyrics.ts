@@ -1,5 +1,6 @@
 import { env } from '@/config';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
+import { createChildLogger } from '../config/logger';
 
 export interface BibleVerse {
   reference: string;
@@ -18,6 +19,7 @@ export class HolyricsBible {
   private page?: Page;
   private previousBibleVerse?: BibleVerse;
   private intervalId?: NodeJS.Timeout;
+  private readonly logger = createChildLogger('HolyricsBible');
 
   private isConnecting = false;
 
@@ -53,17 +55,23 @@ export class HolyricsBible {
       }
 
       await this.page!.goto(holyrics.url, { waitUntil: 'domcontentloaded', timeout: holyrics.timeout * 1000 });
-      console.log('HolyricsBible :: connectToHolyrics :: [OK] :: Página do holyrics carregada ');
+      this.logger.info('Successfully loaded Holyrics page', { url: holyrics.url });
 
       this.isConnecting = false;
       return true;
     } catch (error) {
       const errorMessage = (error as Error).message.split('\n')[0];
 
-      console.error(`HolyricsBible :: connectToHolyrics :: [ERRO] :: Falha ao conectar: ${errorMessage}`);
+      const executablePathMatch = errorMessage.match(/executablePath \((.*?)\)/);
+      const executablePath = executablePathMatch ? executablePathMatch[1] : undefined;
+
+      this.logger.error('Failed to connect to Holyrics', {
+        error: errorMessage,
+        executablePath,
+      });
 
       if (this.browser) {
-        console.log('HolyricsBible :: connectToHolyrics :: [ERRO] :: Fechando o browser para limpeza');
+        this.logger.warn('Closing browser for cleanup due to connection error');
         await this.browser.close();
         this.browser = undefined;
         this.page = undefined;
@@ -78,16 +86,14 @@ export class HolyricsBible {
 
   private handleReconnection = async (): Promise<void> => {
     if (this.browser) {
-      console.log('HolyricsBible :: handleReconnection :: Fechando o browser existente para reconexão');
+      this.logger.info('Closing existing browser for reconnection');
       await this.browser.close();
       this.browser = undefined;
       this.page = undefined;
     }
 
     while (!(await this.connectToHolyrics())) {
-      console.log(
-        `HolyricsBible :: handleReconnection :: [RECONEXÃO] :: Nova tentativa em ${holyrics.retryTime} segundos`,
-      );
+      this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: holyrics.retryTime });
 
       await this.delay(holyrics.retryTime * 1000);
     }
@@ -103,9 +109,7 @@ export class HolyricsBible {
       // Puppeteer doesn't expose isCrashed directly, but we can check if the browser is still connected
       const browserConnected = this.browser?.isConnected();
       if (!browserConnected || this.page.isClosed()) {
-        console.error(
-          'HolyricsBible :: startPollling :: [ERRO POLLING] :: Page or browser is disconnected/crashed. Attempting reconnection.',
-        );
+        this.logger.error('Page or browser is disconnected/crashed. Attempting reconnection');
         await this.handleReconnection();
         return;
       }
@@ -161,17 +165,13 @@ export class HolyricsBible {
 
         callback(currentBibleVerse);
       } catch (error) {
-        console.error(
-          `HolyricsBible :: startPollling :: [ERRO POLLING] :: Falha ao ler DOM: ${(error as Error).message.split('\n')[0]}`,
-        );
+        const errorMessage = (error as Error).message.split('\n')[0];
+        this.logger.error('Failed to read DOM during polling', { error: errorMessage });
 
-        console.error(
-          `HolyricsBible :: startPollling :: [ERRO POLLING] :: Falha ao ler DOM: ${(error as Error).message.split('\n')[0]}`,
-        );
         // If an error occurs during evaluation, it might indicate a problem with the page.
         // Attempt to reconnect to ensure a fresh page instance.
         if (!this.isConnecting) {
-          console.log('HolyricsBible :: startPollling :: [ERRO POLLING] :: Falha ao ler DOM. Tentando reconexão.');
+          this.logger.warn('DOM reading failed. Attempting reconnection');
           await this.handleReconnection();
         }
       }
@@ -179,13 +179,13 @@ export class HolyricsBible {
   };
 
   monitorBibleOutput = async (params: MonitorBibleOutputParams) => {
-    console.log('HolyricsBible :: monitorBibleOutput :: Iniciando monitoramento do Holyrics');
+    this.logger.info('Starting Holyrics monitoring');
 
     await this.handleReconnection();
 
     this.startPollling(params);
 
-    console.log('HolyricsBible :: monitorBibleOutput :: Monitoramento iniciado');
+    this.logger.info('Holyrics monitoring started');
 
     process.on('SIGINT', async () => {
       await this.destroy();
@@ -193,7 +193,7 @@ export class HolyricsBible {
   };
 
   public destroy = async (): Promise<void> => {
-    console.log('HolyricsBible :: destroy :: Cleaning up resources');
+    this.logger.info('Cleaning up resources');
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
@@ -202,7 +202,7 @@ export class HolyricsBible {
       try {
         await this.page.close();
       } catch (error) {
-        console.error(`HolyricsBible :: destroy :: [ERRO] :: Falha ao fechar a página: ${(error as Error).message}`);
+        this.logger.error('Failed to close page', { error: (error as Error).message });
       } finally {
         this.page = undefined;
       }
@@ -211,7 +211,7 @@ export class HolyricsBible {
       try {
         await this.browser.close();
       } catch (error) {
-        console.error(`HolyricsBible :: destroy :: [ERRO] :: Falha ao fechar o browser: ${(error as Error).message}`);
+        this.logger.error('Failed to close browser', { error: (error as Error).message });
       } finally {
         this.browser = undefined;
       }

@@ -23,6 +23,13 @@ const envSchema = z.object({
   SERVICES_HOLYRICS_VERSION_SELECTOR: z.string(),
 
   DB_JSON_PATH: z.string(),
+
+  GRAYLOG_ENABLED: z.string().default('false'),
+  GRAYLOG_HOST: z.string().default('localhost'),
+  GRAYLOG_PORT: z.string().default('12201'),
+  GRAYLOG_HOSTNAME: z.string().default('backend-service'),
+
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -40,7 +47,18 @@ const setupStringOrStringArrayValue = (origins: string): string | string[] => {
   return origins;
 };
 
-const { API_PORT, API_CORS_ORIGINS, API_CORS_ALLOWED_HEADERS, API_LOGGER_LEVEL, WS_PORT } = parsedEnv.data;
+const {
+  API_PORT,
+  API_CORS_ORIGINS,
+  API_CORS_ALLOWED_HEADERS,
+  API_LOGGER_LEVEL,
+  WS_PORT,
+  GRAYLOG_ENABLED,
+  GRAYLOG_HOST,
+  GRAYLOG_PORT,
+  GRAYLOG_HOSTNAME,
+  NODE_ENV,
+} = parsedEnv.data;
 
 export const env = {
   baseConfig: {
@@ -55,6 +73,13 @@ export const env = {
     ws: {
       port: Number(WS_PORT),
     },
+    graylog: {
+      enabled: GRAYLOG_ENABLED === 'true',
+      host: GRAYLOG_HOST,
+      port: Number(GRAYLOG_PORT),
+      hostname: GRAYLOG_HOSTNAME,
+    },
+    nodeEnv: NODE_ENV,
   },
   services: {
     proPresenter: {

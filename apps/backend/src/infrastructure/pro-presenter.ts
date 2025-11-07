@@ -2,6 +2,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { proPresenterHttpClient } from '../config';
 import type { Music } from '@/models/music';
 import type { Readable } from 'node:stream';
+import { createChildLogger } from '../config/logger';
 
 export interface Slide {
   is_playing: boolean;
@@ -55,6 +56,7 @@ const chunkedRequestConfig: AxiosRequestConfig = {
 };
 export class ProPresenter {
   private readonly RETRY_DELAY = 3000; // 3 seconds
+  private readonly logger = createChildLogger('ProPresenter');
 
   async onPresentationFocusedChanged(callback: (music: Music | null) => void): Promise<StreamSubscription> {
     return this.createStreamSubscription(
@@ -64,7 +66,9 @@ export class ProPresenter {
           const musicResponse = await proPresenterHttpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
           callback(musicResponse.data);
         } catch (error) {
-          console.error('Error fetching presentation details:', error);
+          this.logger.error('Error fetching presentation details', {
+            error: (error as Error).message,
+          });
         }
       },
       () => callback(null),
@@ -114,10 +118,10 @@ export class ProPresenter {
     const setupStream = async (): Promise<void> => {
       if (stopped) return;
       try {
-        console.log(`Connecting to ProPresenter ${route} stream...`);
+        this.logger.info('Connecting to ProPresenter stream', { route });
         const response = await proPresenterHttpClient.get(route, chunkedRequestConfig);
         stream = response.data;
-        console.log(`Connected to ProPresenter ${route} stream successfully`);
+        this.logger.info('Connected to ProPresenter stream successfully', { route });
 
         this.onData<TResult>(response, (data) => {
           if (!stopped) {
@@ -128,17 +132,20 @@ export class ProPresenter {
         stream!.on('end', () =>
           this.retry({
             setupStream,
-            logMessage: `Stream ended. Reconnecting to ${route}...`,
+            logMessage: 'Stream ended. Reconnecting.',
             stopped,
             callback: cleanupCallback,
+            route,
           }),
         );
         stream!.on('error', (err: any) =>
           this.retry({
             setupStream,
-            logMessage: `Stream error on ${route}: ${err}`,
+            logMessage: 'Stream error.',
             stopped,
             callback: cleanupCallback,
+            route,
+            error: err.message,
           }),
         );
       } catch (error) {
@@ -165,15 +172,15 @@ export class ProPresenter {
         const data: TResult = JSON.parse(chunk.toString());
         callback(data);
       } catch (parseError) {
-        console.error('Error parsing chunk', parseError);
+        this.logger.error('Error parsing chunk', { error: parseError });
       }
     });
   };
 
-  private retry = ({ callback, setupStream, logMessage, stopped }: RetryParams) => {
+  private retry = ({ callback, setupStream, logMessage, stopped, ...metadata }: RetryParams & Record<string, any>) => {
     if (stopped) return;
     if (callback) callback();
-    if (logMessage) console.log(logMessage);
+    if (logMessage) this.logger.info(logMessage, { ...metadata });
     setTimeout(() => setupStream(), this.RETRY_DELAY);
   };
 
@@ -185,11 +192,12 @@ export class ProPresenter {
     if (isConnectionRefused) {
       this.retry({
         setupStream,
-        logMessage: `ProPresenter connection refused. Retrying in ${this.RETRY_DELAY}ms...`,
+        logMessage: 'ProPresenter connection refused. Retrying.',
         stopped: false,
+        delay: this.RETRY_DELAY,
       });
     } else {
-      console.error('Error connecting to ProPresenter:', {
+      this.logger.error('Error connecting to ProPresenter', {
         message: axiosError.message,
         code: axiosError.code,
         status: axiosError.response?.status,

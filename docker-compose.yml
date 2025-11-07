@@ -13,9 +13,11 @@ services:
       - /app/apps/backend/node_modules
     env_file:
       - apps/backend/.env
+    environment:
+      - NODE_ENV=development
     restart: always
     networks:
-      - church
+      - church      
     deploy:
       resources:
         limits:
@@ -28,7 +30,7 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     ports:
-      - "8080:80"
+      - "8090:80"
     volumes:
       - /app/node_modules
       - /app/apps/frontend/node_modules
@@ -44,7 +46,9 @@ services:
         limits:
           cpus: "0.25"
           memory: "128M"
-
+          
 networks:
   church:
     driver: bridge
+  interactive-display-network:
+    external: true

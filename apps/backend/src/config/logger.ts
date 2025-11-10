@@ -2,7 +2,6 @@ import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from './env';
-import SQLiteTransport from './sqlite-transport';
 
 const { combine, timestamp, json, printf } = winston.format;
 
@@ -27,7 +26,6 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
     }),
   ];
 
-  transports.push(new SQLiteTransport({ level: 'info' }));
 
   return winston.createLogger({
     level: env.baseConfig.nodeEnv === 'development' ? 'debug' : 'info',

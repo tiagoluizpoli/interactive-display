@@ -1,12 +1,12 @@
 import { createBrowserRouter } from 'react-router';
 import App from '@/src/app';
 
-import { Layotut1, Layout2 } from '@/src/presentation';
+import { Layotut1, Presentation } from '@/src/presentation';
 
 export const layoutRouteNames = {
   baseRoute: '/',
   layout1: '/layout-1',
-  Layout2: '/layout-2',
+  Layout2: '/presentation',
 };
 
 export const router = createBrowserRouter([
@@ -20,6 +20,6 @@ export const router = createBrowserRouter([
   },
   {
     path: layoutRouteNames.Layout2,
-    element: <Layout2 />,
+    element: <Presentation />,
   },
 ]);

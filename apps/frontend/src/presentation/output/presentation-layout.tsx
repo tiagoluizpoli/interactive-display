@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { usePresentationConnection, type BibleSlide, type Slide } from './presentation-connection';
 import type { ReactNode } from 'react';
 
-export const Layout2 = () => {
+export const Presentation = () => {
   const { currentSlide, bibleSlide } = usePresentationConnection();
   const { displayEnabled, currentSlide: slide } = currentSlide;
 

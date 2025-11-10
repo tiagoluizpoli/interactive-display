@@ -17,7 +17,7 @@ function App() {
           target="_blank"
           className="bg-black text-white font-black font-mono rounded-lg py-2 px-4"
         >
-          Layout 2
+         Presentation
         </Link>
       </nav>
     </div>

@@ -1,2 +1,2 @@
 export * from './layout-1';
-export * from './layout-2';
+export * from './presentation-layout';

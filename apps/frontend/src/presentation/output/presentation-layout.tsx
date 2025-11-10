@@ -20,59 +20,45 @@ export const Presentation = () => {
 };
 
 const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: boolean }) => {
-  if (!slide.text.includes('\n')) {
-    return (
-      <motion.div
-        key={`${slide.text}-${displayEnabled}`}
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
-        exit={{
-          opacity: 0,
-        }}
-        transition={{ duration: transitionTime }}
-        className="flex justify-center items-center w-full p-6"
-      >
-        <p className="text-5xl font-bold max-w-8xl text-center bg-[rgba(0,0,0,0.8)] text-white p-8 rounded-2xl">
-          {slide.text}
-        </p>
-      </motion.div>
-    );
-  }
-
-  const lines = slide.text.split('\n');
+  const lines = slide.text.includes('\n') ? slide.text.split('\n') : [slide.text];
 
   return (
-    <motion.div
-      key={`${slide.text}-${displayEnabled}`}
-      initial={{
-        opacity: 0,
-      }}
-      animate={{
-        opacity: 1,
-      }}
-      exit={{
-        opacity: 0,
-      }}
-      transition={{ duration: transitionTime }}
-      className="flex justify-center items-center w-full p-6"
-    >
-      <div className="text-5xl font-bold max-w-8xl text-center bg-[rgba(0,0,0,0.8)] text-white p-8 rounded-2xl">
-        {lines.map((line, index) => (
-          <p key={index}>{line}</p>
-        ))}
+    <MotionWrapper key={`${slide.text}-${displayEnabled}`}>
+      <div className="w-full p-4 flex justify-center">
+        <div className="w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl">
+          {lines.map((line, index) => (
+            <p key={index}>{line}</p>
+          ))}
+        </div>
       </div>
-    </motion.div>
+    </MotionWrapper>
   );
 };
 
 const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
   return (
+    <MotionWrapper key={`${bibleSlide.reference}-${bibleSlide.text}`}>
+      {/* <div className="font-bold bg-[rgba(0,0,0,0.8)] w-full font-sans flex flex-col items-start gap-2 px-8 pb-8"> */}
+      {/* <span className="w-fit font-bold text-5xl bg-white p-4 rounded-xl -mt-10 mb-2">{bibleSlide.reference}</span> */}
+      <div className="w-full p-4">
+        <div className="bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl">
+          <div className="flex items-start gap-4 pb-4 mb-2">
+            <span className="w-fit font-bold text-5xl text-white  rounded-xl">{bibleSlide.reference}</span>
+            <span className="text-2xl font-thin text-white">{bibleSlide.version}</span>
+          </div>
+          <div className="w-full">
+            <p className="text-5xl text-white">{bibleSlide.text}</p>
+          </div>
+        </div>
+      </div>
+    </MotionWrapper>
+  );
+};
+
+const MotionWrapper = ({ children, key }: { children: React.ReactNode; key: string }) => {
+  return (
     <motion.div
-      key={`${bibleSlide.reference}-${bibleSlide.text}`}
+      key={key}
       initial={{
         opacity: 0,
       }}
@@ -85,10 +71,7 @@ const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
       transition={{ ease: 'easeInOut', duration: transitionTime }}
       className="flex justify-center items-center w-full"
     >
-      <div className="font-bold bg-[rgba(0,0,0,0.8)] w-full font-sans flex flex-col justify-start gap-2 px-8 pb-8">
-        <span className="w-fit font-bold text-3xl bg-white p-2 rounded-xl -mt-6">{bibleSlide.reference}</span>
-        <p className="text-4xl text-center text-white">{bibleSlide.text}</p>
-      </div>
+      {children}
     </motion.div>
   );
 };

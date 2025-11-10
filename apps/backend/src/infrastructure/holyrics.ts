@@ -121,9 +121,9 @@ export class HolyricsBible {
             const texHtmlObjectt = document.querySelector(textSelector);
             const versionHtmlObject = document.querySelector(versionSelector);
 
-            const reference = referenceHtmlObject?.textContent.trim().replace(/\s\s+/g, ' ');
-            const text = texHtmlObjectt?.textContent.trim().replace(/\s\s+/g, ' ');
-            const version = versionHtmlObject?.textContent.trim().replace(/\s\s+/g, ' ');
+            const reference = referenceHtmlObject?.textContent?.trim().replace(/\s\s+/g, ' ');
+            const text = texHtmlObjectt?.textContent?.trim().replace(/\s\s+/g, ' ');
+            const version = versionHtmlObject?.textContent?.trim().replace(/\s\s+/g, ' ');
 
             if (
               !reference ||

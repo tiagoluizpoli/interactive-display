@@ -3,20 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from './env';
 
-const { combine, timestamp, json, printf } = winston.format;
+const { combine, timestamp, json } = winston.format;
 
 interface LogContext {
   traceId?: string;
 }
-const winstonToSyslogMap: Record<string, string> = {
-  error: 'error',
-  warn: 'warning',
-  info: 'info',
-  http: 'http',
-  verbose: 'verbose',
-  debug: 'debug',
-  silly: 'silly',
-};
+
 const asyncLocalStorage = new AsyncLocalStorage<LogContext>();
 
 const createLogger = (defaultMeta?: Record<string, any>) => {
@@ -25,7 +17,6 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
       format: json(), // Ensure console output is pure JSON, timestamp is already in main format
     }),
   ];
-
 
   return winston.createLogger({
     level: env.baseConfig.nodeEnv === 'development' ? 'debug' : 'info',
@@ -46,7 +37,7 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
 export const logger = createLogger(); // Default logger without specific context
 
 // Middleware to add a trace ID to each request
-export const addTraceId = (req: any, res: any, next: any) => {
+export const addTraceId = (req: any, _: any, next: any) => {
   const traceId = uuidv4();
   asyncLocalStorage.run({ traceId }, () => {
     req.traceId = traceId; // Also attach to req for direct access if needed
@@ -55,9 +46,9 @@ export const addTraceId = (req: any, res: any, next: any) => {
 };
 
 // Function to create a child logger with specific context
-export const createChildLogger = (layer: string) => {
+export const createChildLogger = (layer: string, defaultMeta?: Record<string, any>) => {
   const store = asyncLocalStorage.getStore();
-  const meta: Record<string, any> = { layer };
+  const meta: Record<string, any> = { layer, ...defaultMeta };
   if (store?.traceId) {
     meta.traceId = store.traceId;
   }

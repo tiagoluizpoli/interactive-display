@@ -1,5 +1,4 @@
-import path from 'node:path';
-import express, { Router } from 'express';
+import { Router } from 'express';
 import { io } from '../server';
 
 export const router = Router();
@@ -20,7 +19,3 @@ router.get('/send-message', (_, res) => {
     message: 'Message sent',
   });
 });
-
-const staticPath = path.join(__dirname, '..', '..', 'files');
-
-router.use('/files', express.static('D:/files'));

@@ -7,7 +7,8 @@ export const setupSocketIoHooks = (
   localPersistence: LocalPersistence,
 ) => {
   io.on('connection', (socket) => {
-    const socketLogger = createChildLogger('IoHooks', socket.id);
+    const socketLogger = createChildLogger('IoHooks', { socketId: socket.id });
+
     socketLogger.info('User connected', { socketId: socket.id });
 
     localPersistence.emit();

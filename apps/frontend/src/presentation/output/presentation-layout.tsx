@@ -1,39 +1,20 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePresentationConnection, type BibleSlide, type Slide } from './presentation-connection';
-import type { ReactNode } from 'react';
+const transitionTime = 0.2;
 
 export const Presentation = () => {
   const { currentSlide, bibleSlide } = usePresentationConnection();
   const { displayEnabled, currentSlide: slide } = currentSlide;
 
-  if (bibleSlide) {
-    return (
-      <AnimationWrapper>
-        <BibleView bibleSlide={bibleSlide} />
-      </AnimationWrapper>
-    );
-  }
-
-  if (slide && displayEnabled) {
-    return (
-      <AnimationWrapper>
-        <MusicView slide={slide} displayEnabled={displayEnabled} />
-      </AnimationWrapper>
-    );
-  }
   return (
     <div className="w-screen h-screen flex flex-col justify-end motion-preset-fade-lg">
       <AnimatePresence mode="wait">
-        {slide && displayEnabled && <MusicView slide={slide} displayEnabled={displayEnabled} />}
+        {bibleSlide ? (
+          <BibleView bibleSlide={bibleSlide} key={`bible-${bibleSlide.reference}-${bibleSlide.text}`} />
+        ) : slide && displayEnabled ? (
+          <MusicView slide={slide} displayEnabled={displayEnabled} key={`music-${slide.text}-${displayEnabled}`} />
+        ) : null}
       </AnimatePresence>
-    </div>
-  );
-};
-
-const AnimationWrapper = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className="w-screen h-screen flex flex-col justify-end motion-preset-fade-lg">
-      <AnimatePresence mode="wait">{children}</AnimatePresence>
     </div>
   );
 };
@@ -52,7 +33,7 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
         exit={{
           opacity: 0,
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: transitionTime }}
         className="flex justify-center items-center w-full p-6"
       >
         <p className="text-5xl font-bold max-w-8xl text-center bg-[rgba(0,0,0,0.8)] text-white p-8 rounded-2xl">
@@ -76,7 +57,7 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
       exit={{
         opacity: 0,
       }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: transitionTime }}
       className="flex justify-center items-center w-full p-6"
     >
       <div className="text-5xl font-bold max-w-8xl text-center bg-[rgba(0,0,0,0.8)] text-white p-8 rounded-2xl">
@@ -101,7 +82,7 @@ const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
       exit={{
         opacity: 0,
       }}
-      transition={{ ease: 'easeInOut', duration: 0.3 }}
+      transition={{ ease: 'easeInOut', duration: transitionTime }}
       className="flex justify-center items-center w-full"
     >
       <div className="font-bold bg-[rgba(0,0,0,0.8)] w-full font-sans flex flex-col justify-start gap-2 px-8 pb-8">

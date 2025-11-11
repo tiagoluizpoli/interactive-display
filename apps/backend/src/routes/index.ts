@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { io } from '../server';
+import { configRoutes } from './config';
 
 export const router = Router();
+
+router.use('/config', configRoutes);
 
 router.get('/', (_, res) => {
   res.status(200).json({

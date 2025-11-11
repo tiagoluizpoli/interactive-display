@@ -11,13 +11,14 @@ services:
     volumes:
       - /app/node_modules
       - /app/apps/backend/node_modules
+      - sqlite_data:/app/apps/backend/src/db/
     env_file:
       - apps/backend/.env
     environment:
       - NODE_ENV=development
     restart: always
     networks:
-      - church      
+      - church
     deploy:
       resources:
         limits:
@@ -52,3 +53,6 @@ networks:
     driver: bridge
   interactive-display-network:
     external: true
+
+volumes:
+  sqlite_data:

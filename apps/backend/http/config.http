@@ -1,0 +1,21 @@
+### Get All configs
+GET http://localhost:5000/config
+
+### Create/Update Config
+POST http://localhost:5000/config
+Content-Type: application/json
+
+{
+    "setName": "holyrics",
+    "key": "PORT",
+    "value": "8585"
+}
+
+### Get Config by Name
+GET http://localhost:5000/config/propresenter
+
+### Delete Config property
+DELETE http://localhost:5000/config/propresenter/test2
+
+### Delete Config
+DELETE http://localhost:5000/config/propresenter

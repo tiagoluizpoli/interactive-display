@@ -1,12 +1,7 @@
-import { env } from './config';
-import { FilePresentationRepository, HolyricsBible, ProPresenter } from './infrastructure';
+import { HolyricsBible, ProPresenter } from './infrastructure';
 import { LocalPersistence, MusicPresentation, BiblePresentation } from './presentations';
 
-const { jsonPath } = env.db;
-
 export const makePresentations = async () => {
-  const presentationRepository = new FilePresentationRepository(jsonPath);
-  await presentationRepository.connect();
   const proPresenter = new ProPresenter();
 
   const musicPresentation = new MusicPresentation(proPresenter);

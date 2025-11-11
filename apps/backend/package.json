@@ -7,6 +7,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsup src --clean",
     "start": "node dist/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
     "dev:playground": "tsx watch src/playground/index.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -18,11 +21,14 @@
   "dependencies": {
     "@types/puppeteer": "^7.0.4",
     "axios": "^1.9.0",
+    "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
+    "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
     "morgan": "^1.10.0",
     "puppeteer": "^24.26.1",
     "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
     "tsx": "^4.19.4",
     "uuid": "^13.0.0",
     "winston": "^3.18.3",
@@ -30,11 +36,13 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.6",
     "globals": "^16.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3"

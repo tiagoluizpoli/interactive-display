@@ -1,43 +1,21 @@
 import { config } from 'dotenv';
 import { z } from 'zod';
+import { ConfigService } from '../infrastructure/config-service';
 
 config();
 
-const envSchema = z.object({
-  API_PORT: z.string().default('5000'),
-  API_CORS_ORIGINS: z.string(),
-  API_CORS_ALLOWED_HEADERS: z.string(),
-  API_LOGGER_LEVEL: z.enum(['debug', 'dev', 'prod']),
-
-  WS_PORT: z.string(),
-
-  SERVICES_PRO_PRESENTER_HOST: z.string(),
-  SERVICES_PRO_PRESENTER_PORT: z.string(),
-
-  SERVICES_HOLYRICS_URL: z.string(),
-  SERVICES_HOLYRICS_TIMEOUT: z.coerce.number(),
-  SERVICES_HOLYRICS_RETRY_TIME: z.coerce.number(),
-  SERVICES_HOLYRICS_POLLING_INTERVAL_MS: z.coerce.number(),
-  SERVICES_HOLYRICS_REFERENCE_SELECTOR: z.string(),
-  SERVICES_HOLYRICS_TEXT_SELECTOR: z.string(),
-  SERVICES_HOLYRICS_VERSION_SELECTOR: z.string(),
-
-  DB_JSON_PATH: z.string(),
-
-  GRAYLOG_ENABLED: z.string().default('false'),
-  GRAYLOG_HOST: z.string().default('localhost'),
-  GRAYLOG_PORT: z.string().default('12201'),
-  GRAYLOG_HOSTNAME: z.string().default('backend-service'),
-
+const staticEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
-const parsedEnv = envSchema.safeParse(process.env);
+const parsedStaticEnv = staticEnvSchema.safeParse(process.env);
 
-if (!parsedEnv.success) {
-  console.error('Invalid environment variables:', parsedEnv.error.format());
-  throw new Error('Invalid environment variables');
+if (!parsedStaticEnv.success) {
+  console.error('Invalid static environment variables:', parsedStaticEnv.error.format());
+  throw new Error('Invalid static environment variables');
 }
+
+const configService = ConfigService.getInstance();
 
 const setupStringOrStringArrayValue = (origins: string): string | string[] => {
   if (origins.includes(',')) {
@@ -47,58 +25,78 @@ const setupStringOrStringArrayValue = (origins: string): string | string[] => {
   return origins;
 };
 
-const {
-  API_PORT,
-  API_CORS_ORIGINS,
-  API_CORS_ALLOWED_HEADERS,
-  API_LOGGER_LEVEL,
-  WS_PORT,
-  GRAYLOG_ENABLED,
-  GRAYLOG_HOST,
-  GRAYLOG_PORT,
-  GRAYLOG_HOSTNAME,
-  NODE_ENV,
-} = parsedEnv.data;
+// Define validation schemas for each config set
+export const holyricsConfigSchema = z.object({
+  URL: z.string().url().min(1, 'Holyrics URL is required'),
+  TIMEOUT: z.number().min(1, 'Holyrics timeout must be a positive number'),
+  RETRY_TIME: z.number().min(0, 'Holyrics retry time must be a non-negative number'),
+  POLLING_INTERVAL_MS: z.number().min(1, 'Holyrics polling interval must be a positive number'),
+  REFERENCE_SELECTOR: z.string().min(1, 'Holyrics reference selector is required'),
+  TEXT_SELECTOR: z.string().min(1, 'Holyrics text selector is required'),
+  VERSION_SELECTOR: z.string().min(1, 'Holyrics version selector is required'),
+});
+
+export const proPresenterConfigSchema = z.object({
+  HOST: z.string().min(1, 'ProPresenter host is required'),
+  PORT: z.number().min(1, 'ProPresenter port must be a positive number'),
+});
+
+// Function to validate a config set
+export const validateConfig = async <T extends z.ZodSchema>(setName: string, schema: T): Promise<z.infer<T>> => {
+  const configValues = await configService.getConfigSetValues(setName);
+  if (!configValues) {
+    throw new Error(`Configuration set "${setName}" not found.`);
+  }
+  const parsed = schema.safeParse(Object.fromEntries(configValues));
+  if (!parsed.success) {
+    console.error(`Invalid configuration for ${setName}:`, parsed.error.format());
+    throw new Error(`Invalid configuration for ${setName}`);
+  }
+  return parsed.data;
+};
 
 export const env = {
   baseConfig: {
     api: {
-      port: Number(API_PORT),
-      loggerLevel: API_LOGGER_LEVEL,
+      port: Number( process.env.API_PORT || '5000'),
+      loggerLevel: (configService.get('api', 'LOGGER_LEVEL') || process.env.API_LOGGER_LEVEL || 'dev') as
+        | 'debug'
+        | 'dev'
+        | 'prod',
       cors: {
-        origin: setupStringOrStringArrayValue(API_CORS_ORIGINS),
-        allowedHeaders: setupStringOrStringArrayValue(API_CORS_ALLOWED_HEADERS),
+        origin: setupStringOrStringArrayValue(
+          configService.get('api', 'CORS_ORIGINS') || process.env.API_CORS_ORIGINS || '',
+        ),
+        allowedHeaders: setupStringOrStringArrayValue(
+          configService.get('api', 'CORS_ALLOWED_HEADERS') || process.env.API_CORS_ALLOWED_HEADERS || '',
+        ),
       },
     },
-    ws: {
-      port: Number(WS_PORT),
-    },
-    graylog: {
-      enabled: GRAYLOG_ENABLED === 'true',
-      host: GRAYLOG_HOST,
-      port: Number(GRAYLOG_PORT),
-      hostname: GRAYLOG_HOSTNAME,
-    },
-    nodeEnv: NODE_ENV,
+
+    nodeEnv: parsedStaticEnv.data.NODE_ENV,
   },
   services: {
     proPresenter: {
-      host: parsedEnv.data.SERVICES_PRO_PRESENTER_HOST,
-      port: Number(parsedEnv.data.SERVICES_PRO_PRESENTER_PORT),
+      host: configService.get('proPresenter', 'HOST') || process.env.SERVICES_PRO_PRESENTER_HOST || '',
+      port: Number(configService.get('proPresenter', 'PORT') || process.env.SERVICES_PRO_PRESENTER_PORT || '0'),
     },
     holyrics: {
-      url: parsedEnv.data.SERVICES_HOLYRICS_URL,
-      timeout: parsedEnv.data.SERVICES_HOLYRICS_TIMEOUT,
-      retryTime: parsedEnv.data.SERVICES_HOLYRICS_RETRY_TIME,
-      pollingIntervalMs: parsedEnv.data.SERVICES_HOLYRICS_POLLING_INTERVAL_MS,
+      url: configService.get('holyrics', 'URL') || process.env.SERVICES_HOLYRICS_URL || '',
+      timeout: Number(configService.get('holyrics', 'TIMEOUT') || process.env.SERVICES_HOLYRICS_TIMEOUT || '0'),
+      retryTime: Number(configService.get('holyrics', 'RETRY_TIME') || process.env.SERVICES_HOLYRICS_RETRY_TIME || '0'),
+      pollingIntervalMs: Number(
+        configService.get('holyrics', 'POLLING_INTERVAL_MS') ||
+          process.env.SERVICES_HOLYRICS_POLLING_INTERVAL_MS ||
+          '0',
+      ),
       selectors: {
-        referenceSelector: parsedEnv.data.SERVICES_HOLYRICS_REFERENCE_SELECTOR,
-        textSelectoor: parsedEnv.data.SERVICES_HOLYRICS_TEXT_SELECTOR,
-        versionSelector: parsedEnv.data.SERVICES_HOLYRICS_VERSION_SELECTOR,
+        referenceSelector:
+          configService.get('holyrics', 'REFERENCE_SELECTOR') || process.env.SERVICES_HOLYRICS_REFERENCE_SELECTOR || '',
+        textSelectoor:
+          configService.get('holyrics', 'TEXT_SELECTOR') || process.env.SERVICES_HOLYRICS_TEXT_SELECTOR || '',
+        versionSelector:
+          configService.get('holyrics', 'VERSION_SELECTOR') || process.env.SERVICES_HOLYRICS_VERSION_SELECTOR || '',
       },
     },
-  },
-  db: {
-    jsonPath: parsedEnv.data.DB_JSON_PATH,
   },
 };

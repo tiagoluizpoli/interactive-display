@@ -25,7 +25,7 @@ RUN apt update && \
     libxfixes3 \
     libxrandr2 \
     libgbm-dev \
-    libasound2 \
+    libasound2t64 \
     libpangocairo-1.0-0 \
     libgtk-3-0
 

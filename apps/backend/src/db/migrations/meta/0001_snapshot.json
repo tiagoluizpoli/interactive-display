@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "193e0316-ce0e-458b-a5a2-21a88750d1d5",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "be5da489-3982-490b-997f-6ee78d174598",
+  "prevId": "193e0316-ce0e-458b-a5a2-21a88750d1d5",
   "tables": {
     "config": {
       "name": "config",
@@ -10,7 +10,7 @@
         "id": {
           "name": "id",
           "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },

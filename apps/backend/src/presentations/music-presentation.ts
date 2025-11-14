@@ -1,4 +1,4 @@
-import type { PresentationSlideIndexParams, ProPresenter, StreamSubscription } from '@/infrastructure';
+import type { PresentationSlideIndexParams, ProPresenter, StreamSubscription } from '@/services';
 
 import type { Music, Slide } from '@/models/music';
 import type { IPresentation } from './local-persistence';

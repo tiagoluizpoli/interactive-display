@@ -1,4 +1,4 @@
-import type { BibleVerse, HolyricsBible } from '@/infrastructure';
+import type { BibleVerse, HolyricsBible } from '@/services';
 import type { IPresentation } from './local-persistence';
 import { io } from '@/server';
 import { createChildLogger } from '../config/logger';

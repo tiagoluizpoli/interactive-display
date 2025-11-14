@@ -1,8 +1,9 @@
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { proPresenterHttpClient } from '../config';
+import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Music } from '@/models/music';
 import type { Readable } from 'node:stream';
 import { createChildLogger } from '../config/logger';
+import axios from 'axios';
+import type { ProPresenterConfig } from '@/config';
 
 export interface Slide {
   is_playing: boolean;
@@ -55,6 +56,14 @@ const chunkedRequestConfig: AxiosRequestConfig = {
   responseType: 'stream',
 };
 export class ProPresenter {
+  private client: AxiosInstance;
+
+  constructor({ HOST, PORT }: ProPresenterConfig) {
+    this.client = axios.create({
+      baseURL: `http://${HOST}:${PORT}`,
+    });
+  }
+
   private readonly RETRY_DELAY = 3000; // 3 seconds
   private readonly logger = createChildLogger('ProPresenter');
 
@@ -63,7 +72,7 @@ export class ProPresenter {
       '/v1/presentation/focused',
       async (slide: PresentationId) => {
         try {
-          const musicResponse = await proPresenterHttpClient.get<Music>(`/v1/presentation/${slide.uuid}`);
+          const musicResponse = await this.client.get<Music>(`/v1/presentation/${slide.uuid}`);
           callback(musicResponse.data);
         } catch (error) {
           this.logger.error('Error fetching presentation details', {
@@ -119,7 +128,7 @@ export class ProPresenter {
       if (stopped) return;
       try {
         this.logger.info('Connecting to ProPresenter stream', { route });
-        const response = await proPresenterHttpClient.get(route, chunkedRequestConfig);
+        const response = await this.client.get(route, chunkedRequestConfig);
         stream = response.data;
         this.logger.info('Connected to ProPresenter stream successfully', { route });
 

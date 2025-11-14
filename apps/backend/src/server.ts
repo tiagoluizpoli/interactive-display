@@ -8,7 +8,7 @@ import { makePresentations } from '@/present-factory';
 import type { LocalPersistence } from '@/presentations';
 import { addTraceId, createChildLogger } from './config/logger';
 
-const { port, cors } = env.baseConfig.api;
+const { baseConfig, api } = env;
 
 const app = express();
 
@@ -23,18 +23,21 @@ export const server = createServer(app);
 export const io = new Server(server, {
   connectionStateRecovery: {},
   cors: {
-    origin: cors.origin,
+    origin: api.corsOrigins,
+    allowedHeaders: api.corsAllowedHeaders,
   },
 });
 
-let presentations: LocalPersistence;
+let presentations: LocalPersistence | undefined;
 
 const init = async () => {
   presentations = await makePresentations();
   setupSocketIoHooks(io, presentations);
 
-  const expressServer = server.listen(port, () => {
-    createChildLogger('Server').info('Server is running', { port });
+  presentations?.execute();
+
+  const expressServer = server.listen(api.port, () => {
+    createChildLogger('Server').info('Server is running', { port: api.port });
   });
 
   process.on('SIGINT', async () => {
@@ -50,7 +53,7 @@ const init = async () => {
       });
       logger.info('Express server closed');
 
-      await presentations.destroy();
+      await presentations?.destroy();
       logger.info('Presentations resources destroyed');
 
       await new Promise<void>((resolve, reject) => {
@@ -66,16 +69,16 @@ const init = async () => {
       logger.info('API server closed. Exiting process.');
       process.exit(0);
     } catch (error) {
-      logger.error('Error during graceful shutdown', { error: (error as Error).message });
+      logger.error('Error during graceful shutdown', {
+        error: (error as Error).message,
+      });
       process.exit(1);
     }
   });
 };
 
-init()
-  .then(async () => {   
-    await presentations.execute();
-  })
-  .catch((error) => {
-    logger.error('Server initialization failed', { error: (error as Error).message });
+init().catch((error) => {
+  logger.error('Server initialization failed', {
+    error: (error as Error).message,
   });
+});

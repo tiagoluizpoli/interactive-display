@@ -14,16 +14,17 @@ const logOptions: Record<string, (app: Express) => void> = {
     ),
 };
 
-const { loggerLevel, cors: envCors } = env.baseConfig.api;
+const { api } = env;
 
 export const setupExpressApp = (app: Express) => {
   app.use(express.json());
 
   app.use(
     cors({
-      origin: envCors.origin,
+      origin: api.corsOrigins,
+      allowedHeaders: api.corsAllowedHeaders,
     }),
   );
 
-  logOptions[loggerLevel](app);
+  logOptions[api.logLevel](app);
 };

@@ -25,7 +25,7 @@ RUN apt update && \
     libxfixes3 \
     libxrandr2 \
     libgbm-dev \
-    libasound2t64 \
+    libasound2 \
     libpangocairo-1.0-0 \
     libgtk-3-0
 
@@ -33,6 +33,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+RUN yarn db:migrate
 
 EXPOSE 5000
 CMD ["node", "dist/server.js"]

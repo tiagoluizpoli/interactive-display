@@ -15,6 +15,7 @@
     "start": "concurrently --kill-others-on-fail \"yarn start:front\" \"yarn start:back\"",
     "db:generate": "cd apps/backend && yarn db:generate",
     "db:migrate": "cd apps/backend && yarn db:migrate",
+    "db:seed": "cd apps/backend && yarn db:seed",
     "db:studio": "cd apps/backend && yarn db:studio",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

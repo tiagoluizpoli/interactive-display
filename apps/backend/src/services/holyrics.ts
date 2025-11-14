@@ -1,6 +1,7 @@
-import { env } from '@/config';
+import type { HolyricsConfig } from '@/config';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
 import { createChildLogger } from '../config/logger';
+import { delay } from '@/utils';
 
 export interface BibleVerse {
   reference: string;
@@ -12,20 +13,15 @@ interface MonitorBibleOutputParams {
   callback: (bibleVerse: BibleVerse | undefined) => void;
 }
 
-const { holyrics } = env.services;
-
 export class HolyricsBible {
   private browser?: Browser;
   private page?: Page;
   private previousBibleVerse?: BibleVerse;
   private intervalId?: NodeJS.Timeout;
   private readonly logger = createChildLogger('HolyricsBible');
-
   private isConnecting = false;
 
-  private delay = (ms: number) => {
-    return new Promise<void>((resolve) => setTimeout(resolve, ms));
-  };
+  constructor(private readonly holyrics: HolyricsConfig) {}
 
   private launchBrowser = async () => {
     this.browser = await puppeteer.launch({
@@ -54,8 +50,11 @@ export class HolyricsBible {
         await this.launchBrowser();
       }
 
-      await this.page!.goto(holyrics.url, { waitUntil: 'domcontentloaded', timeout: holyrics.timeout * 1000 });
-      this.logger.info('Successfully loaded Holyrics page', { url: holyrics.url });
+      await this.page!.goto(this.holyrics.URL, {
+        waitUntil: 'domcontentloaded',
+        timeout: Number(this.holyrics.TIMEOUT) * 1000,
+      });
+      this.logger.info('Successfully loaded Holyrics page', { url: this.holyrics.URL });
 
       this.isConnecting = false;
       return true;
@@ -93,9 +92,9 @@ export class HolyricsBible {
     }
 
     while (!(await this.connectToHolyrics())) {
-      this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: holyrics.retryTime });
+      this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: this.holyrics.RETRY_TIME });
 
-      await this.delay(holyrics.retryTime * 1000);
+      await delay(Number(this.holyrics.RETRY_TIME) * 1000);
     }
   };
 
@@ -141,9 +140,9 @@ export class HolyricsBible {
               version,
             };
           },
-          holyrics.selectors.referenceSelector,
-          holyrics.selectors.textSelectoor,
-          holyrics.selectors.versionSelector,
+          this.holyrics.REFERENCE_SELECTOR,
+          this.holyrics.TEXT_SELECTOR,
+          this.holyrics.VERSION_SELECTOR,
         );
 
         if (this.previousBibleVerse && !currentBibleVerse) {
@@ -175,7 +174,7 @@ export class HolyricsBible {
           await this.handleReconnection();
         }
       }
-    }, holyrics.pollingIntervalMs);
+    }, Number(this.holyrics.POLLING_INTERVAL_MS));
   };
 
   monitorBibleOutput = async (params: MonitorBibleOutputParams) => {

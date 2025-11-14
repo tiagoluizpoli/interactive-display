@@ -1,69 +1,73 @@
 import { Router } from 'express';
-import { ConfigService } from '../infrastructure/config-service';
+import { ConfigRepository } from '../db/config-repository';
 import { z } from 'zod';
 
 export const configRoutes = Router();
-const configService = ConfigService.getInstance();
+const configService = ConfigRepository.getInstance();
 
-const setConfigSchema = z.object({
-  setName: z.string().min(1, 'Config set name is required'),
-  key: z.string().min(1, 'Key is required'),
-  value: z.string().min(1, 'Value is required'),
+const upsertConfigSchema = z.object({
+  configCode: z.string().min(1, 'ConfigCode name is required'),
+  values: z.array(
+    z.object({
+      key: z.string().min(1, 'Key is required'),
+      value: z.string().min(1, 'Value is required'),
+    }),
+  ),
 });
 
-const setNameParamSchema = z.object({
-  setName: z.string().min(1, 'Config set name is required'),
+const configCodeParamSchema = z.object({
+  configCode: z.string().min(1, 'ConfigCode is required'),
 });
 
 const deleteConfigSchema = z.object({
-  setName: z.string().min(1, 'Config set name is required'),
+  configCode: z.string().min(1, 'ConfigCode is required'),
   key: z.string().min(1, 'Key is required'),
 });
 
-configRoutes.get('/', async (req, res) => {
+configRoutes.get('/', async (_, res) => {
   const allConfig = await configService.getAll();
   return res.json(allConfig);
 });
 
 configRoutes.post('/', async (req, res) => {
-  const parsedBody = setConfigSchema.safeParse(req.body);
+  const parsedBody = upsertConfigSchema.safeParse(req.body);
   if (!parsedBody.success) {
     return res.status(400).json({ message: parsedBody.error.errors });
   }
-  const { setName, key, value } = parsedBody.data;
-  await configService.set(setName, key, value);
-  return res.status(200).json({ message: 'Configuration updated successfully' });
+  const { configCode, values } = parsedBody.data;
+  await configService.set(configCode, values);
+  return res.status(200).json({ message: 'Config updated successfully' });
 });
 
-configRoutes.get('/:setName', async (req, res) => {
-  const parsedParams = setNameParamSchema.safeParse(req.params);
+configRoutes.get('/:configCode', async (req, res) => {
+  const parsedParams = configCodeParamSchema.safeParse(req.params);
   if (!parsedParams.success) {
     return res.status(400).json({ message: parsedParams.error.errors });
   }
-  const { setName } = parsedParams.data;
-  const configValues = await configService.getConfigSetValues(setName);
+  const { configCode } = parsedParams.data;
+  const configValues = await configService.getConfigByCode(configCode);
   if (!configValues) {
-    return res.status(404).json({ message: `Config set "${setName}" not found` });
+    return res.status(404).json({ message: `Config with code ${configCode} not found` });
   }
-  return res.json(Object.fromEntries(configValues));
+  return res.json(configValues);
 });
 
-configRoutes.delete('/:setName/:key', async (req, res) => {
+configRoutes.delete('/:configCode/:key', async (req, res) => {
   const parsedParams = deleteConfigSchema.safeParse(req.params);
   if (!parsedParams.success) {
     return res.status(400).json({ message: parsedParams.error.errors });
   }
-  const { setName, key } = parsedParams.data;
-  await configService.delete(setName, key);
+  const { configCode, key } = parsedParams.data;
+  await configService.deleteConfigValue(configCode, key);
   return res.status(200).json({ message: 'Configuration deleted successfully' });
 });
 
-configRoutes.delete('/:setName', async (req, res) => {
-  const parsedParams = setNameParamSchema.safeParse(req.params);
+configRoutes.delete('/:configCode', async (req, res) => {
+  const parsedParams = configCodeParamSchema.safeParse(req.params);
   if (!parsedParams.success) {
     return res.status(400).json({ message: parsedParams.error.errors });
   }
-  const { setName } = parsedParams.data;
-  await configService.deleteSet(setName);
+  const { configCode } = parsedParams.data;
+  await configService.deleteConfig(configCode);
   return res.status(200).json({ message: 'Configuration set deleted successfully' });
 });

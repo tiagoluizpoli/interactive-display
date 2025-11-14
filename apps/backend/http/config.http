@@ -6,16 +6,64 @@ POST http://localhost:5000/config
 Content-Type: application/json
 
 {
-    "setName": "holyrics",
-    "key": "PORT",
-    "value": "8585"
+    "configCode": "pro-presenter",
+    "values": [
+        {
+            "key": "HOST",
+            "value": "192.168.0.200"
+        },       
+        {
+            "key": "PORT",
+            "value": "8999"
+        }
+    ]
+}
+
+
+
+### Create/Update Config
+POST http://localhost:5000/config
+Content-Type: application/json
+
+{
+    "configCode": "holyrics",
+    "values": [
+        {
+            "key": "URL",
+            "value": "http://192.168.0.200:8092/view/text"
+        },
+        {
+            "key": "TIMEOUT",
+            "value": "30"
+        },
+        {
+            "key": "RETRY_TIME",
+            "value": "3"
+        },
+        {
+            "key": "POLLING_INTERVAL_MS",
+            "value": "100"
+        },
+        {
+            "key": "REFERENCE_SELECTOR",
+            "value": ".bible-header-custom"
+        },
+        {
+            "key": "TEXT_SELECTOR",
+            "value": ".bible_slide > ctt"
+        },
+        {
+            "key": "VERSION_SELECTOR",
+            "value": ".bible_slide > span"
+        }
+    ]
 }
 
 ### Get Config by Name
 GET http://localhost:5000/config/propresenter
 
 ### Delete Config property
-DELETE http://localhost:5000/config/propresenter/test2
+DELETE http://localhost:5000/config/holyrics/TIMEOUT
 
 ### Delete Config
 DELETE http://localhost:5000/config/propresenter

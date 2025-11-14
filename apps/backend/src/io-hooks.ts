@@ -4,14 +4,14 @@ import { createChildLogger } from './config/logger';
 
 export const setupSocketIoHooks = (
   io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,
-  localPersistence: LocalPersistence,
+  localPersistence?: LocalPersistence,
 ) => {
   io.on('connection', (socket) => {
     const socketLogger = createChildLogger('IoHooks', { socketId: socket.id });
 
     socketLogger.info('User connected', { socketId: socket.id });
 
-    localPersistence.emit();
+    localPersistence?.emit();
 
     socket.on('disconnect', () => {
       socketLogger.info('User disconnected', { socketId: socket.id });

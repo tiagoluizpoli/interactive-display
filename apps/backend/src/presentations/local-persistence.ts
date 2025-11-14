@@ -1,4 +1,4 @@
-import type { ProPresenter, StreamSubscription } from '@/infrastructure';
+import type { ProPresenter, StreamSubscription } from '@/services';
 
 export interface IPresentation {
   execute: () => Promise<void>;

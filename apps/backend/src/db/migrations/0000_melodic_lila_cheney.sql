@@ -1,5 +1,5 @@
 CREATE TABLE `config` (
-	`id` text NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
 	`code` text NOT NULL
 );
 --> statement-breakpoint

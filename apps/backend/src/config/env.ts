@@ -10,6 +10,7 @@ const staticEnvSchema = z.object({
   API_CORS_ALLOWED_HEADERS: z.string().min(1, 'API CORS allowed headers are required'),
   API_LOG_LEVEL: z.enum(['debug', 'dev', 'prod']).default('prod'),
   DB_SQLITE_PATH: z.string().min(1, 'DB SQLite path is required').endsWith('.db', 'DB SQLite path must end with .db'),
+  NOTIFIER_BROADCAST_INTERVAL: z.coerce.number().min(1, 'Notification broadcast interval must be a positive number'),
 });
 
 const parsedStaticEnv = staticEnvSchema.safeParse(process.env);
@@ -27,8 +28,15 @@ const setupStringOrStringArrayValue = (origins: string): string | string[] => {
   return origins;
 };
 
-const { NODE_ENV, API_PORT, API_CORS_ORIGINS, API_CORS_ALLOWED_HEADERS, API_LOG_LEVEL, DB_SQLITE_PATH } =
-  parsedStaticEnv.data;
+const {
+  NODE_ENV,
+  API_PORT,
+  API_CORS_ORIGINS,
+  API_CORS_ALLOWED_HEADERS,
+  API_LOG_LEVEL,
+  DB_SQLITE_PATH,
+  NOTIFIER_BROADCAST_INTERVAL,
+} = parsedStaticEnv.data;
 
 export const env = {
   baseConfig: {
@@ -43,5 +51,8 @@ export const env = {
   logger: {},
   db: {
     sqlitePath: DB_SQLITE_PATH,
+  },
+  notifier: {
+    broadcastInterval: NOTIFIER_BROADCAST_INTERVAL,
   },
 };

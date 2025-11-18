@@ -1,4 +1,4 @@
-import type { HolyricsConfig } from '@/config';
+import type { HolyricsConfig, Notifier } from '@/config';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
 import { createChildLogger } from '../config/logger';
 import { delay } from '@/utils';
@@ -21,7 +21,10 @@ export class HolyricsBible {
   private readonly logger = createChildLogger('HolyricsBible');
   private isConnecting = false;
 
-  constructor(private readonly holyrics: HolyricsConfig) {}
+  constructor(
+    private readonly holyrics: HolyricsConfig,
+    private readonly notifier: Notifier,
+  ) {}
 
   private launchBrowser = async () => {
     this.browser = await puppeteer.launch({
@@ -52,9 +55,17 @@ export class HolyricsBible {
 
       await this.page!.goto(this.holyrics.URL, {
         waitUntil: 'domcontentloaded',
-        timeout: Number(this.holyrics.TIMEOUT) * 1000,
+        timeout: this.holyrics.TIMEOUT * 1000,
       });
       this.logger.info('Successfully loaded Holyrics page', { url: this.holyrics.URL });
+      this.notifier.addNotification({
+        type: 'status',
+        layer: 'holyrics',
+        context: {
+          message: 'holyrics on',
+          data: { status: true },
+        },
+      });
 
       this.isConnecting = false;
       return true;
@@ -67,6 +78,17 @@ export class HolyricsBible {
       this.logger.error('Failed to connect to Holyrics', {
         error: errorMessage,
         executablePath,
+      });
+
+      this.notifier.addNotification({
+        type: 'connection-issue',
+        layer: 'holyrics',
+        context: {
+          message: 'Failed to connect to Holyrics',
+          data: {
+            url: this.holyrics.URL,
+          },
+        },
       });
 
       if (this.browser) {
@@ -94,7 +116,7 @@ export class HolyricsBible {
     while (!(await this.connectToHolyrics())) {
       this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: this.holyrics.RETRY_TIME });
 
-      await delay(Number(this.holyrics.RETRY_TIME) * 1000);
+      await delay(this.holyrics.RETRY_TIME * 1000);
     }
   };
 
@@ -106,9 +128,16 @@ export class HolyricsBible {
 
       // Check if the page is closed or crashed
       // Puppeteer doesn't expose isCrashed directly, but we can check if the browser is still connected
-      const browserConnected = this.browser?.isConnected();
+      const browserConnected = this.browser?.connected;
       if (!browserConnected || this.page.isClosed()) {
         this.logger.error('Page or browser is disconnected/crashed. Attempting reconnection');
+        this.notifier.addNotification({
+          type: 'connection-issue',
+          layer: 'holyrics',
+          context: {
+            message: 'Page or browser is disconnected/crashed. Attempting reconnection',
+          },
+        });
         await this.handleReconnection();
         return;
       }
@@ -166,6 +195,23 @@ export class HolyricsBible {
       } catch (error) {
         const errorMessage = (error as Error).message.split('\n')[0];
         this.logger.error('Failed to read DOM during polling', { error: errorMessage });
+        this.notifier.addNotification([
+          {
+            type: 'puppetter-issue',
+            layer: 'holyrics',
+            context: {
+              message: errorMessage,
+            },
+          },
+          {
+            type: 'status',
+            layer: 'holyrics',
+            context: {
+              message: 'holyrics off',
+              data: { status: false },
+            },
+          },
+        ]);
 
         // If an error occurs during evaluation, it might indicate a problem with the page.
         // Attempt to reconnect to ensure a fresh page instance.
@@ -174,7 +220,7 @@ export class HolyricsBible {
           await this.handleReconnection();
         }
       }
-    }, Number(this.holyrics.POLLING_INTERVAL_MS));
+    }, this.holyrics.POLLING_INTERVAL_MS);
   };
 
   monitorBibleOutput = async (params: MonitorBibleOutputParams) => {
@@ -185,6 +231,16 @@ export class HolyricsBible {
     this.startPollling(params);
 
     this.logger.info('Holyrics monitoring started');
+    this.notifier.addNotification([
+      {
+        type: 'status',
+        layer: 'holyrics',
+        context: {
+          message: 'holyrics on',
+          data: { status: true },
+        },
+      },
+    ]);
 
     process.on('SIGINT', async () => {
       await this.destroy();
@@ -209,6 +265,14 @@ export class HolyricsBible {
     if (this.browser) {
       try {
         await this.browser.close();
+        this.notifier.addNotification({
+          type: 'status',
+          layer: 'holyrics',
+          context: {
+            message: 'holyrics off',
+            data: { status: false },
+          },
+        });
       } catch (error) {
         this.logger.error('Failed to close browser', { error: (error as Error).message });
       } finally {

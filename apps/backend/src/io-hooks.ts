@@ -1,10 +1,10 @@
 import type { DefaultEventsMap, Server } from 'socket.io';
-import type { LocalPersistence } from './presentations';
+import type { Orchestrator } from './presentations';
 import { createChildLogger } from './config/logger';
 
 export const setupSocketIoHooks = (
   io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,
-  localPersistence?: LocalPersistence,
+  localPersistence?: Orchestrator,
 ) => {
   io.on('connection', (socket) => {
     const socketLogger = createChildLogger('IoHooks', { socketId: socket.id });

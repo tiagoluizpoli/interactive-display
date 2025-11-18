@@ -4,11 +4,10 @@ import { Server } from 'socket.io';
 import express from 'express';
 import { setupSocketIoHooks } from './io-hooks';
 import { router } from './routes';
-import { makePresentations } from '@/present-factory';
-import type { LocalPersistence } from '@/presentations';
+import { makePresentations } from '@/presentation-factory';
 import { addTraceId, createChildLogger } from './config/logger';
 
-const { baseConfig, api } = env;
+const { api } = env;
 
 const app = express();
 
@@ -28,13 +27,10 @@ export const io = new Server(server, {
   },
 });
 
-let presentations: LocalPersistence | undefined;
-
 const init = async () => {
-  presentations = await makePresentations();
-  setupSocketIoHooks(io, presentations);
+  const { orchestrator, notifier } = await makePresentations();
 
-  presentations?.execute();
+  setupSocketIoHooks(io, orchestrator);
 
   const expressServer = server.listen(api.port, () => {
     createChildLogger('Server').info('Server is running', { port: api.port });
@@ -53,7 +49,8 @@ const init = async () => {
       });
       logger.info('Express server closed');
 
-      await presentations?.destroy();
+      orchestrator.destroy();
+      notifier.destroy();
       logger.info('Presentations resources destroyed');
 
       await new Promise<void>((resolve, reject) => {

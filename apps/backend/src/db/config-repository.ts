@@ -68,7 +68,6 @@ export class ConfigRepository {
       })
       .returning();
 
-    console.log({ config });
     await db
       .insert(configValuesTable)
       .values(values.map(({ key, value }) => ({ configId: config.id, key, value })))
@@ -83,8 +82,6 @@ export class ConfigRepository {
     const valuesResult = await db.query.configValuesTable.findMany({
       where: eq(configValuesTable.configId, config.id),
     });
-
-    console.log({ config, valuesResult });
 
     this.configCache.set(config.code, {
       ...config,
@@ -126,7 +123,7 @@ export class ConfigRepository {
     const configValuesKeys = Object.keys(config.configValues);
     config.configValues = configValuesKeys
       .filter((c) => c !== key)
-      .reduce((acc: Record<string, string>, key) => {
+      .reduce((acc: Record<string, string | number>, key) => {
         acc[key] = config.configValues[key];
         return acc;
       }, {});

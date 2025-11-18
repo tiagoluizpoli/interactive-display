@@ -7,5 +7,5 @@ export interface ConfigValueModel {
 export interface ConfigModel {
   id: string | null;
   code: string;
-  configValues: Record<string, string>;
+  configValues: Record<string, string | number>;
 }

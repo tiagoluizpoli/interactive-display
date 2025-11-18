@@ -1,21 +1,26 @@
 import type { PresentationSlideIndexParams, ProPresenter, StreamSubscription } from '@/services';
 
 import type { Music, Slide } from '@/models/music';
-import type { IPresentation } from './local-persistence';
+import type { IPresentation } from './orchestrator';
 import { io } from '@/server';
+import type { ConfigType } from '@/config';
 
 export interface CurrentMusicDto {
   currentSlide?: Slide | null;
   displayEnabled?: boolean;
 }
 export class MusicPresentation implements IPresentation {
+  type: ConfigType = 'pro-presenter';
   music?: Music | null;
   currentSlide?: Slide | null;
   displayEnabled = false;
   private slides: Slide[] = [];
   private subscriptions: StreamSubscription[] = [];
 
-  constructor(private readonly proPresenter: ProPresenter) {}
+  constructor(private readonly proPresenter: ProPresenter) {
+    this.setDisplayEnabled(false);
+    this.proPresenter.onPublicStateChange((state) => this.setDisplayEnabled(state));
+  }
 
   async execute(): Promise<void> {
     this.subscriptions.push(await this.proPresenter.onPresentationFocusedChanged(this.setMusic));

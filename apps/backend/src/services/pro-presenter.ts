@@ -3,7 +3,7 @@ import type { Music } from '@/models/music';
 import type { Readable } from 'node:stream';
 import { createChildLogger } from '../config/logger';
 import axios from 'axios';
-import type { ProPresenterConfig } from '@/config';
+import type { Notifier, ProPresenterConfig } from '@/config';
 
 export interface Slide {
   is_playing: boolean;
@@ -58,7 +58,11 @@ const chunkedRequestConfig: AxiosRequestConfig = {
 export class ProPresenter {
   private client: AxiosInstance;
 
-  constructor({ HOST, PORT }: ProPresenterConfig) {
+  constructor(
+    params: ProPresenterConfig,
+    private readonly notifier: Notifier,
+  ) {
+    const { HOST, PORT } = params;
     this.client = axios.create({
       baseURL: `http://${HOST}:${PORT}`,
     });
@@ -77,6 +81,14 @@ export class ProPresenter {
         } catch (error) {
           this.logger.error('Error fetching presentation details', {
             error: (error as Error).message,
+          });
+
+          this.notifier.addNotification({
+            type: 'connection-issue',
+            layer: 'pro-presenter',
+            context: {
+              message: 'Error fetching presentation details',
+            },
           });
         }
       },
@@ -102,16 +114,6 @@ export class ProPresenter {
     );
   }
 
-  async onSlideChange(callback: (code: string) => void): Promise<StreamSubscription> {
-    return this.createStreamSubscription<Slide>(
-      '/v1/transport/presentation/current',
-      (slide) => {
-        callback(slide.name);
-      },
-      () => callback(''),
-    );
-  }
-
   async onPublicStateChange(callback: (state: boolean) => void): Promise<StreamSubscription> {
     return this.createStreamSubscription<boolean>('/v1/status/audience_screens', callback, () => callback(false));
   }
@@ -132,22 +134,58 @@ export class ProPresenter {
         stream = response.data;
         this.logger.info('Connected to ProPresenter stream successfully', { route });
 
+        this.notifier.addNotification({
+          type: 'status',
+          layer: 'pro-presenter',
+          context: {
+            message: 'pro-presenter on',
+            data: { status: true },
+          },
+        });
         this.onData<TResult>(response, (data) => {
           if (!stopped) {
             dataCallback(data);
           }
         });
 
-        stream!.on('end', () =>
+        stream!.on('end', () => {
+          this.notifier.addNotification({
+            type: 'status',
+            layer: 'pro-presenter',
+            context: {
+              message: 'pro-presenter off',
+              data: { status: false },
+            },
+          });
           this.retry({
             setupStream,
             logMessage: 'Stream ended. Reconnecting.',
             stopped,
             callback: cleanupCallback,
             route,
-          }),
-        );
-        stream!.on('error', (err: any) =>
+          });
+        });
+        stream!.on('error', (err: any) => {
+          this.notifier.addNotification([
+            {
+              type: 'status',
+              layer: 'pro-presenter',
+              context: {
+                message: 'pro-presenter off',
+                data: { status: false },
+              },
+            },
+            {
+              type: 'propresenter-issue',
+              layer: 'pro-presenter',
+              context: {
+                message: 'ProPresenter stream error',
+                data: {
+                  error: err.message,
+                },
+              },
+            },
+          ]);
           this.retry({
             setupStream,
             logMessage: 'Stream error.',
@@ -155,8 +193,8 @@ export class ProPresenter {
             callback: cleanupCallback,
             route,
             error: err.message,
-          }),
-        );
+          });
+        });
       } catch (error) {
         if (stopped) return;
         this.onError(error, setupStream, cleanupCallback);
@@ -199,19 +237,43 @@ export class ProPresenter {
     const isConnectionRefused = code === 'ECONNREFUSED' || code === 'ECONNRESET';
 
     if (isConnectionRefused) {
+      this.notifier.addNotification({
+        type: 'connection-issue',
+        layer: 'pro-presenter',
+        context: {
+          message: 'ProPresenter connection refused',
+          data: {
+            url: this.client.defaults.baseURL,
+          },
+        },
+      });
       this.retry({
         setupStream,
         logMessage: 'ProPresenter connection refused. Retrying.',
         stopped: false,
         delay: this.RETRY_DELAY,
       });
-    } else {
-      this.logger.error('Error connecting to ProPresenter', {
-        message: axiosError.message,
-        code: axiosError.code,
-        status: axiosError.response?.status,
-      });
-      this.retry({ setupStream, callback, stopped: false });
+
+      return;
     }
+
+    this.logger.error('Error connecting to ProPresenter', {
+      message: axiosError.message,
+      code: axiosError.code,
+      status: axiosError.response?.status,
+    });
+    this.notifier.addNotification({
+      type: 'connection-issue',
+      layer: 'pro-presenter',
+      context: {
+        message: 'Error connecting to ProPresenter',
+        data: {
+          url: this.client.defaults.baseURL,
+          code: axiosError.code,
+          status: axiosError.response?.status,
+        },
+      },
+    });
+    this.retry({ setupStream, callback, stopped: false });
   };
 }

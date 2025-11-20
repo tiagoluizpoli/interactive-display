@@ -1,5 +1,6 @@
 import { Separator } from '../components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '../components/ui/sidebar';
+import { Toaster } from '../components/ui/sonner';
 import { ModeToggle } from '../providers/theme-provider';
 import { AppSidebar } from './sidebar';
 import type { ParentType } from './types';
@@ -17,7 +18,10 @@ export const Layout = ({ children }: ParentType) => {
           </div>
           <ModeToggle />
         </header>
-        <main className="w-full p-4">{children}</main>
+        <main className="w-full p-4">
+          {children}
+          <Toaster />
+        </main>
       </SidebarInset>
     </>
   );

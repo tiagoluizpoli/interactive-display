@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const port = env.PORT ? Number.parseInt(env.PORT) : 5001;
 
   return {
-    plugins: [tailwindcss(), react()],
+    plugins: [react(), tailwindcss()],
     server: {
       port: port,
     },
@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@/src': path.resolve(process.cwd(), './src'),
+        '@/src': path.resolve(__dirname, './src'),
       },
     },
   };

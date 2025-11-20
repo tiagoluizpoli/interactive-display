@@ -1,10 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { Router } from '@/src/providers/router';
+import { Providers } from './providers';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Router />
-  </StrictMode>,
-);
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(
+    <StrictMode>
+      <Providers />
+    </StrictMode>,
+  );
+}

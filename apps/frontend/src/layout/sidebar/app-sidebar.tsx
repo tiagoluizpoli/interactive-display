@@ -20,22 +20,48 @@ interface MenuItem {
   title: string;
   icon: string;
   to: LinkProps['to'];
+  target?: LinkProps['target'];
   copyUrl?: {
     icon: string;
     url: string;
   };
 }
 
+interface Group {
+  title: string;
+  items: MenuItem[];
+}
+
 export const AppSidebar = () => {
-  const menuItems: MenuItem[] = [
+  const dashboards: MenuItem[] = [
+    {
+      title: 'Dashboard',
+      to: layoutRouteNames.baseRoute,
+      icon: 'ri:dashboard-line',
+    },
+  ];
+
+  const telas: MenuItem[] = [
     {
       icon: 'ph:presentation',
       title: 'Apresentação',
       to: layoutRouteNames.presentation,
+      target: '_blank',
       copyUrl: {
         icon: 'bx:copy',
         url: `${window.location.origin}${layoutRouteNames.presentation}`,
       },
+    },
+  ];
+
+  const menuGroups: Group[] = [
+    {
+      title: 'Home',
+      items: dashboards,
+    },
+    {
+      title: 'Telas',
+      items: telas,
     },
   ];
 
@@ -55,39 +81,41 @@ export const AppSidebar = () => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel> Telas </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item, index) => (
-                <SidebarMenuItem key={`${item.title}-${index}`}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.to} target="_blank" className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon icon={item.icon} className="size-4!" />
-                        {item.title}
-                      </div>
-                      {item.copyUrl ? (
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigator.clipboard.writeText(item.copyUrl!.url);
-                            toast.info('Link copiado!');
-                          }}
-                          type="button"
-                          variant="ghost"
-                          className="cursor-pointer"
-                        >
-                          <Icon icon={item.copyUrl.icon} className="size-4!" />
-                        </Button>
-                      ) : null}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {menuGroups.map((group, groupIndex) => (
+          <SidebarGroup key={`${group.title}.${groupIndex}`}>
+            <SidebarGroupLabel> {group.title} </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item, index) => (
+                  <SidebarMenuItem key={`${item.title}-${index}`}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.to} target={item.target} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Icon icon={item.icon} className="size-4!" />
+                          {item.title}
+                        </div>
+                        {item.copyUrl ? (
+                          <Button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigator.clipboard.writeText(item.copyUrl!.url);
+                              toast.info('Link copiado!');
+                            }}
+                            type="button"
+                            variant="ghost"
+                            className="cursor-pointer"
+                          >
+                            <Icon icon={item.copyUrl.icon} className="size-4!" />
+                          </Button>
+                        ) : null}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );

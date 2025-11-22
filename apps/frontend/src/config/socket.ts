@@ -10,3 +10,7 @@ export const socket = io(baseUrl, {
 socket.on('connect', () => {
   console.log(`Connected to server with the id: ${socket.id}`);
 });
+
+export const listenTo = (event: string, callback: (data: any) => void) => {
+  socket.on(event, callback);
+};

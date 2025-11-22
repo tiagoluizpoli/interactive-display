@@ -34,7 +34,7 @@ Content-Type: application/json
         },
         {
             "key": "TIMEOUT",
-            "value": "30"
+            "value": "10"
         },
         {
             "key": "RETRY_TIME",

@@ -1,5 +1,5 @@
 import type { HolyricsConfig, StatusNotifier } from '@/config';
-import puppeteer, { type Browser, type Page } from 'puppeteer';
+import puppeteer, { type Browser, type Page, type HTTPRequest } from 'puppeteer';
 import { createChildLogger } from '../config/logger';
 import { delay } from '@/utils';
 
@@ -20,6 +20,9 @@ export class HolyricsBible {
   private intervalId?: NodeJS.Timeout;
   private readonly logger = createChildLogger('HolyricsBible');
   private isConnecting = false;
+  private networkFailureCount = 0;
+  private boundHandleRequest?: (request: HTTPRequest) => void;
+  private boundHandleRequestFailed?: (request: HTTPRequest) => void;
 
   constructor(
     private readonly holyrics: HolyricsConfig,
@@ -53,11 +56,49 @@ export class HolyricsBible {
         await this.launchBrowser();
       }
 
+      // Ensure any old listeners are removed before attaching new ones
+      if (this.page) {
+        if (this.boundHandleRequest) {
+          this.page.off('request', this.boundHandleRequest);
+        }
+        if (this.boundHandleRequestFailed) {
+          this.page.off('requestfailed', this.boundHandleRequestFailed);
+        }
+      }
+
+      await this.page!.setRequestInterception(true);
+      this.boundHandleRequestFailed = this.handleRequestFailed.bind(this);
+      this.page!.on('requestfailed', this.boundHandleRequestFailed);
+
+      // Ensure requests continue
+      this.boundHandleRequest = (request: HTTPRequest) => {
+        if (this.networkFailureCount > 0) {
+          this.notifier.setStatus('holyrics', {
+            active: true,
+          });
+
+          this.notifier.addLogs('holyrics', ['Holyrics connected']);
+        }
+        this.networkFailureCount = 0;
+        request.continue();
+      };
+      this.page!.on('request', this.boundHandleRequest);
+
+      this.logger.info('Puppeteer request interception enabled.');
+
+      this.logger.debug(`Navigating to Holyrics URL: ${this.holyrics.URL}`);
+      const navigationStartTime = process.hrtime.bigint();
+
       await this.page!.goto(this.holyrics.URL, {
         waitUntil: 'domcontentloaded',
         timeout: this.holyrics.TIMEOUT * 1000,
       });
-      this.logger.info('Successfully loaded Holyrics page', { url: this.holyrics.URL });
+
+      const navigationEndTime = process.hrtime.bigint();
+      const navigationDurationMs = Number(navigationEndTime - navigationStartTime) / 1_000_000;
+      this.logger.info(`Successfully loaded Holyrics page in ${navigationDurationMs.toFixed(2)}ms`, {
+        url: this.holyrics.URL,
+      });
       this.notifier.setStatus('holyrics', {
         active: true,
       });
@@ -100,6 +141,7 @@ export class HolyricsBible {
   };
 
   private handleReconnection = async (): Promise<void> => {
+    this.networkFailureCount = 0; // Reset network failure count on reconnection attempt
     if (this.browser) {
       this.logger.info('Closing existing browser for reconnection');
       await this.browser.close();
@@ -114,8 +156,37 @@ export class HolyricsBible {
     }
   };
 
+  private handleRequestFailed = (request: HTTPRequest) => {
+    const failure = request.failure();
+    if (
+      failure &&
+      (failure.errorText === 'net::ERR_CONNECTION_REFUSED' || failure.errorText === 'canceled') &&
+      request.url().includes(this.holyrics.URL) // Only track failures for the Holyrics domain
+    ) {
+      this.networkFailureCount++;
+      if (this.networkFailureCount === 1) {
+        this.notifier.setStatus('holyrics', {
+          active: false,
+        });
+
+        this.notifier.addLogs('holyrics', ['Holyrics is unreachable']);
+      }
+      this.logger.warn(`Network request failed: ${request.url()} - ${failure.errorText}`, {
+        currentFailures: this.networkFailureCount,
+      });
+
+      if (this.networkFailureCount >= this.holyrics.MAX_NETWORK_FAILURES && !this.isConnecting) {
+        this.logger.error(
+          `Max network failures (${this.holyrics.MAX_NETWORK_FAILURES}) reached. Triggering reconnection.`,
+        );
+        this.handleReconnection();
+      }
+    }
+  };
+
   private startPollling = async ({ callback }: MonitorBibleOutputParams): Promise<void> => {
     this.intervalId = setInterval(async () => {
+      // If a reconnection is in progress due to network issues, do not proceed with polling
       if (!this.page || this.isConnecting) {
         return;
       }
@@ -165,6 +236,13 @@ export class HolyricsBible {
           this.holyrics.TEXT_SELECTOR,
           this.holyrics.VERSION_SELECTOR,
         );
+
+        if (this.networkFailureCount > 0 || this.isConnecting) {
+          if (!this.previousBibleVerse) return;
+
+          this.previousBibleVerse = undefined;
+          return callback(undefined);
+        }
 
         if (this.previousBibleVerse && !currentBibleVerse) {
           this.previousBibleVerse = undefined;
@@ -228,8 +306,19 @@ export class HolyricsBible {
       this.intervalId = undefined;
     }
     if (this.page) {
+      const currentPage = this.page; // Capture reference to current page
+      // Detach listeners before potentially closing and nullifying the page
+      if (this.boundHandleRequest) {
+        currentPage.off('request', this.boundHandleRequest);
+        this.boundHandleRequest = undefined;
+      }
+      if (this.boundHandleRequestFailed) {
+        currentPage.off('requestfailed', this.boundHandleRequestFailed);
+        this.boundHandleRequestFailed = undefined;
+      }
+
       try {
-        await this.page.close();
+        await currentPage.close();
       } catch (error) {
         this.logger.error('Failed to close page', { error: (error as Error).message });
       } finally {
@@ -251,5 +340,6 @@ export class HolyricsBible {
     }
     this.isConnecting = false;
     this.previousBibleVerse = undefined;
+    this.networkFailureCount = 0; // Reset on destroy
   };
 }

@@ -33,8 +33,12 @@ Content-Type: application/json
             "value": "http://192.168.0.200:8092/view/text"
         },
         {
+            "key": "MAX_NETWORK_FAILURES",
+            "value": "5"
+        },
+        {
             "key": "TIMEOUT",
-            "value": "10"
+            "value": "30"
         },
         {
             "key": "RETRY_TIME",
@@ -42,7 +46,7 @@ Content-Type: application/json
         },
         {
             "key": "POLLING_INTERVAL_MS",
-            "value": "100"
+            "value": "300"
         },
         {
             "key": "REFERENCE_SELECTOR",

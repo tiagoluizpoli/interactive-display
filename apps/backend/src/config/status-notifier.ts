@@ -9,6 +9,12 @@ type PossibleValues = string | number | boolean | PossibleValues[] | undefined;
 const commonPropTypes = ['active'] as const;
 export type CommonPropType = (typeof commonPropTypes)[number];
 
+export interface StatusNotifierLogs {
+  timestamp: Date;
+  message: string;
+  context?: Record<string, PossibleValues>;
+}
+
 const holyricsPropTypes = [] as const;
 export type HolyricsPropType = (typeof holyricsPropTypes)[number];
 
@@ -24,7 +30,7 @@ export type ProPresenterUnionPropType = Record<CommonPropType, PossibleValues> &
   Partial<Record<Exclude<ProPresenterPropType, CommonPropType>, PossibleValues>>;
 
 interface BaseStatus {
-  logs: string[];
+  logs: StatusNotifierLogs[];
 }
 
 export interface HolyricsStatus extends BaseStatus {
@@ -43,6 +49,12 @@ export type Status = HolyricsStatus | ProPresenterStatus;
 interface StatusMap {
   holyrics: HolyricsStatus;
   'pro-presenter': ProPresenterStatus;
+}
+
+export interface StatusNotifierSetStatus<K extends keyof StatusMap> {
+  subject: K;
+  items: Partial<StatusMap[K]['items']>;
+  logs?: Pick<StatusNotifierLogs, 'message' | 'context'>[];
 }
 
 // --- Class Implementation ---
@@ -87,9 +99,12 @@ export class StatusNotifier {
    * K extends keyof StatusMap: K becomes 'holyrics' | 'pro-presenter'
    * items: Partial<StatusMap[K]['items']>: Automatically grabs the correct item type based on K
    */
-  setStatus<K extends keyof StatusMap>(subject: K, items: Partial<StatusMap[K]['items']>) {
-    // We need to cast 'items' here because TypeScript acts conservatively
+  setStatus<K extends keyof StatusMap>({ subject, items, logs }: StatusNotifierSetStatus<K>) {
+    if (logs?.length) {
+      this.addLogs(subject, logs);
+    }
     // when merging generic partials into concrete union types.
+    // We need to cast 'items' here because TypeScript acts conservatively
     const currentStatus = this.statuses[subject];
 
     this.statuses[subject].items = {
@@ -98,13 +113,13 @@ export class StatusNotifier {
     } as StatusMap[K]['items'];
   }
 
-  addLogs(subject: keyof StatusMap, logs: string[]) {
-    this.statuses[subject].logs.push(...logs);
-  }
-
-  public sendStatus(status: any) {
-    this.logger.info('Sending status', { status });
-    io.emit('status.update', status);
+  addLogs(subject: keyof StatusMap, logs: Pick<StatusNotifierLogs, 'message' | 'context'>[]) {
+    this.statuses[subject].logs.push(
+      ...logs.map((log) => ({
+        timestamp: new Date(),
+        ...log,
+      })),
+    );
   }
 
   public startBroadcast() {
@@ -115,7 +130,7 @@ export class StatusNotifier {
 
       io.emit('notification.status', notificationsToPush);
       this.clearLogs();
-    }, 2 * 1000);
+    }, 1 * 1000);
   }
 
   public destroy() {
@@ -129,7 +144,8 @@ export class StatusNotifier {
     // Object.values works, but casting helps TS understand the array content
     const allStatuses = Object.values(this.statuses) as Status[];
     for (const status of allStatuses) {
-      status.logs.length = 0;
+      this.statuses[status.subject].logs.length = 0;
+      // status.logs.length = 0;
     }
   }
 }

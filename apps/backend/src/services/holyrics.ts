@@ -20,6 +20,7 @@ export class HolyricsBible {
   private intervalId?: NodeJS.Timeout;
   private readonly logger = createChildLogger('HolyricsBible');
   private isConnecting = false;
+  private isReconnecting = false; // New flag to prevent parallel handleReconnection calls
   private networkFailureCount = 0;
   private boundHandleRequest?: (request: HTTPRequest) => void;
   private boundHandleRequestFailed?: (request: HTTPRequest) => void;
@@ -71,15 +72,7 @@ export class HolyricsBible {
       this.page!.on('requestfailed', this.boundHandleRequestFailed);
 
       // Ensure requests continue
-      this.boundHandleRequest = (request: HTTPRequest) => {
-        if (this.networkFailureCount > 0) {
-          this.notifier.setStatus('holyrics', {
-            active: true,
-          });
-
-          this.notifier.addLogs('holyrics', ['Holyrics connected']);
-        }
-        this.networkFailureCount = 0;
+      this.boundHandleRequest = async (request: HTTPRequest) => {
         request.continue();
       };
       this.page!.on('request', this.boundHandleRequest);
@@ -99,11 +92,25 @@ export class HolyricsBible {
       this.logger.info(`Successfully loaded Holyrics page in ${navigationDurationMs.toFixed(2)}ms`, {
         url: this.holyrics.URL,
       });
-      this.notifier.setStatus('holyrics', {
-        active: true,
+
+      this.notifier.setStatus({
+        subject: 'holyrics',
+        items: {
+          active: true,
+        },
+        logs: [
+          {
+            message: `Successfully loaded Holyrics page in ${navigationDurationMs.toFixed(2)}ms`,
+            context: {
+              url: this.holyrics.URL,
+              openPages: (await this.browser?.pages())?.length || 0,
+            },
+          },
+        ],
       });
 
       this.isConnecting = false;
+      this.networkFailureCount = 0;
       return true;
     } catch (error) {
       const errorMessage = (error as Error).message.split('\n')[0];
@@ -116,14 +123,21 @@ export class HolyricsBible {
         executablePath,
       });
 
-      this.notifier.addLogs('holyrics', [
-        'Failed to connect to Holyrics',
-        `error message :: ${errorMessage}`,
-        `holyrics URL :: ${this.holyrics.URL}`,
-      ]);
-
-      this.notifier.setStatus('holyrics', {
-        active: false,
+      this.notifier.setStatus({
+        subject: 'holyrics',
+        items: {
+          active: false,
+        },
+        logs: [
+          {
+            message: 'Failed to connect to Holyrics',
+            context: {
+              executablePath,
+              url: this.holyrics.URL,
+              errorMessage,
+            },
+          },
+        ],
       });
 
       if (this.browser) {
@@ -141,41 +155,63 @@ export class HolyricsBible {
   };
 
   private handleReconnection = async (): Promise<void> => {
-    this.networkFailureCount = 0; // Reset network failure count on reconnection attempt
-    if (this.browser) {
-      this.logger.info('Closing existing browser for reconnection');
-      await this.browser.close();
-      this.browser = undefined;
-      this.page = undefined;
+    if (this.isReconnecting) {
+      return;
     }
 
-    while (!(await this.connectToHolyrics())) {
-      this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: this.holyrics.RETRY_TIME });
+    this.isReconnecting = true;
+    try {
+      this.networkFailureCount = 0; // Reset network failure count on reconnection attempt
+      if (this.browser) {
+        this.logger.info('Closing existing browser for reconnection');
+        await this.browser.close();
+        this.browser = undefined;
+        this.page = undefined;
+      }
 
-      await delay(this.holyrics.RETRY_TIME * 1000);
+      while (!(await this.connectToHolyrics())) {
+        this.logger.warn('Reconnection attempt failed', { retryTimeSeconds: this.holyrics.RETRY_TIME });
+
+        await delay(this.holyrics.RETRY_TIME * 1000);
+      }
+    } finally {
+      this.isReconnecting = false;
     }
   };
 
   private handleRequestFailed = (request: HTTPRequest) => {
     const failure = request.failure();
+
     if (
       failure &&
       (failure.errorText === 'net::ERR_CONNECTION_REFUSED' || failure.errorText === 'canceled') &&
       request.url().includes(this.holyrics.URL) // Only track failures for the Holyrics domain
     ) {
       this.networkFailureCount++;
-      if (this.networkFailureCount === 1) {
-        this.notifier.setStatus('holyrics', {
-          active: false,
-        });
 
-        this.notifier.addLogs('holyrics', ['Holyrics is unreachable']);
+      if (this.networkFailureCount === 1) {
+        this.notifier.setStatus({
+          subject: 'holyrics',
+          items: {
+            active: false,
+          },
+          logs: [
+            {
+              message: 'Holyrics is unreachable',
+              context: {
+                url: this.holyrics.URL,
+                failureCount: this.networkFailureCount,
+                // pages: (await this.browser?.pages())?.length || 0,
+              },
+            },
+          ],
+        });
       }
       this.logger.warn(`Network request failed: ${request.url()} - ${failure.errorText}`, {
         currentFailures: this.networkFailureCount,
       });
 
-      if (this.networkFailureCount >= this.holyrics.MAX_NETWORK_FAILURES && !this.isConnecting) {
+      if (this.networkFailureCount >= this.holyrics.MAX_NETWORK_FAILURES) {
         this.logger.error(
           `Max network failures (${this.holyrics.MAX_NETWORK_FAILURES}) reached. Triggering reconnection.`,
         );
@@ -196,9 +232,17 @@ export class HolyricsBible {
       const browserConnected = this.browser?.connected;
       if (!browserConnected || this.page.isClosed()) {
         this.logger.error('Page or browser is disconnected/crashed. Attempting reconnection');
-        this.notifier.addLogs('holyrics', ['Page or browser is disconnected/crashed. Attempting reconnection']);
-        this.notifier.setStatus('holyrics', {
-          active: false,
+
+        this.notifier.setStatus({
+          subject: 'holyrics',
+          items: {
+            active: false,
+          },
+          logs: [
+            {
+              message: 'Page or browser is disconnected/crashed. Attempting reconnection',
+            },
+          ],
         });
 
         await this.handleReconnection();
@@ -266,9 +310,19 @@ export class HolyricsBible {
         const errorMessage = (error as Error).message.split('\n')[0];
         this.logger.error('Failed to read DOM during polling', { error: errorMessage });
 
-        this.notifier.addLogs('holyrics', ['Failed to read DOM during polling', `error message :: ${errorMessage}`]);
-        this.notifier.setStatus('holyrics', {
-          active: false,
+        this.notifier.setStatus({
+          subject: 'holyrics',
+          items: {
+            active: false,
+          },
+          logs: [
+            {
+              message: 'Failed to read DOM during polling',
+              context: {
+                errorMessage,
+              },
+            },
+          ],
         });
 
         // If an error occurs during evaluation, it might indicate a problem with the page.
@@ -290,8 +344,11 @@ export class HolyricsBible {
 
     this.logger.info('Holyrics monitoring started');
 
-    this.notifier.setStatus('holyrics', {
-      active: true,
+    this.notifier.setStatus({
+      subject: 'holyrics',
+      items: {
+        active: true,
+      },
     });
 
     process.on('SIGINT', async () => {
@@ -329,8 +386,11 @@ export class HolyricsBible {
       try {
         await this.browser.close();
 
-        this.notifier.setStatus('holyrics', {
-          active: false,
+        this.notifier.setStatus({
+          subject: 'holyrics',
+          items: {
+            active: false,
+          },
         });
       } catch (error) {
         this.logger.error('Failed to close browser', { error: (error as Error).message });
@@ -339,6 +399,7 @@ export class HolyricsBible {
       }
     }
     this.isConnecting = false;
+    this.isReconnecting = false; // Reset on destroy
     this.previousBibleVerse = undefined;
     this.networkFailureCount = 0; // Reset on destroy
   };

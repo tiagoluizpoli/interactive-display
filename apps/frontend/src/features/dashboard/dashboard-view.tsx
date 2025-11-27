@@ -12,7 +12,12 @@ export const DashboardView = () => {
           <CardDescription>Status do Holyrics</CardDescription>
         </CardHeader>
         <CardContent>
-          {holyricsNotifications.subject} - {holyricsNotifications.items.active ? 'Ativo' : 'Inativo'}
+          {holyricsNotifications.subject} - {holyricsNotifications.items?.active ? 'Ativo' : 'Inativo'}
+          {holyricsNotifications.logs.map((log, idx) => (
+            <p key={idx}>
+              {log.timestamp.toISOString()} - {log.message} - {JSON.stringify(log.context)}
+            </p>
+          ))}
         </CardContent>
       </Card>
     </div>

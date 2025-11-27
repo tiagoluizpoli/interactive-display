@@ -42,7 +42,7 @@ Content-Type: application/json
         },
         {
             "key": "RETRY_TIME",
-            "value": "3"
+            "value": "1"
         },
         {
             "key": "POLLING_INTERVAL_MS",

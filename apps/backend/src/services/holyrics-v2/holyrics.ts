@@ -4,6 +4,13 @@ import { BrowserManager } from './browser-manager';
 import type { HTTPRequest } from 'puppeteer';
 import { delay } from '@/utils';
 
+enum ConnectionState {
+  DISCONNECTED = 'DISCONNECTED',
+  CONNECTING = 'CONNECTING',
+  CONNECTED = 'CONNECTED',
+  RECONNECTING = 'RECONNECTING',
+}
+
 /**
  * @class Holyrics
  * @description The core class for integrating with Holyrics to monitor and extract Bible verses (V2).
@@ -15,10 +22,10 @@ export class Holyrics {
   private readonly logger;
   private previousBibleVerse?: BibleVerse;
   private intervalId?: NodeJS.Timeout;
-  private isConnecting = false;
-  private isReconnecting = false;
+  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private networkFailureCount = 0;
   private boundHandleRequestFailed?: (request: HTTPRequest) => void;
+  private boundSigIntHandler?: () => Promise<void>;
 
   constructor(
     private readonly config: HolyricsServiceConfig,
@@ -41,6 +48,13 @@ export class Holyrics {
     });
   }
 
+  private setConnectionState(newState: ConnectionState) {
+    if (this.connectionState === newState) return;
+
+    this.logger.debug(`Connection state transition: ${this.connectionState} -> ${newState}`);
+    this.connectionState = newState;
+  }
+
   /**
    * @method connectToHolyrics
    * @description Attempts to establish a connection to the Holyrics web interface using the BrowserManager.
@@ -49,17 +63,18 @@ export class Holyrics {
    * @returns {Promise<boolean>} A promise that resolves to `true` if the connection is successful, `false` otherwise.
    */
   private connectToHolyrics = async (): Promise<boolean> => {
-    if (this.isConnecting) return false;
+    if (this.connectionState === ConnectionState.CONNECTING || this.connectionState === ConnectionState.CONNECTED) {
+      this.logger.debug(`Already ${this.connectionState}. Skipping new connection attempt.`);
+      return true; // Already connecting or connected, treat as success for idempotency
+    }
 
-    this.isConnecting = true;
+    this.setConnectionState(ConnectionState.CONNECTING);
     try {
       this.logger.info('Attempting to connect to Holyrics page.');
       await this.browserManager.launch(); // Ensures a fresh browser/page
 
       this.browserManager.manageListeners(async (page) => {
-        if (this.boundHandleRequestFailed) {
-          page.off('requestfailed', this.boundHandleRequestFailed);
-        }
+        // No need to call page.off here as a new page is launched, and old listeners are implicitly cleaned up
         this.boundHandleRequestFailed = this.handleRequestFailed.bind(this);
         page.on('requestfailed', this.boundHandleRequestFailed);
         await page.setRequestInterception(true);
@@ -92,6 +107,7 @@ export class Holyrics {
       });
 
       this.networkFailureCount = 0; // Reset network failure count on success
+      this.setConnectionState(ConnectionState.CONNECTED);
       return true;
     } catch (error) {
       const errorMessage = (error as Error).message.split('\n')[0];
@@ -115,9 +131,8 @@ export class Holyrics {
       });
 
       await this.browserManager.close(); // Close browser on connection failure
+      this.setConnectionState(ConnectionState.DISCONNECTED);
       return false;
-    } finally {
-      this.isConnecting = false;
     }
   };
 
@@ -130,19 +145,36 @@ export class Holyrics {
    * @returns {Promise<void>}
    */
   private handleReconnection = async (): Promise<void> => {
-    if (this.isReconnecting) {
-      this.logger.debug('Reconnection already in progress. Skipping new attempt.');
+    if (this.connectionState === ConnectionState.RECONNECTING || this.connectionState === ConnectionState.CONNECTING) {
+      this.logger.debug(
+        `Reconnection already in progress or connecting. Current state: ${this.connectionState}. Skipping new attempt.`,
+      );
       return;
     }
 
-    this.isReconnecting = true;
+    this.setConnectionState(ConnectionState.RECONNECTING);
     try {
       this.networkFailureCount = 0; // Reset network failure count at the start of a new reconnection sequence.
       this.logger.info('Initiating full reconnection sequence. Closing existing browser.');
       await this.browserManager.close(); // Ensure previous browser is fully purged
 
       let attempt = 1;
-      while (!(await this.connectToHolyrics())) {
+      while (this.connectionState !== ConnectionState.CONNECTED) {
+        if (await this.connectToHolyrics()) {
+          this.setConnectionState(ConnectionState.CONNECTED);
+          this.logger.info('Reconnection successful.');
+          this.notifier.setStatus({
+            subject: 'holyrics',
+            items: { active: true },
+            logs: [
+              {
+                message: 'Holyrics reconnected successfully.',
+              },
+            ],
+          });
+          break;
+        }
+
         this.logger.warn(`Reconnection attempt ${attempt} failed. Retrying in ${this.config.RETRY_TIME} seconds.`);
         this.notifier.setStatus({
           subject: 'holyrics',
@@ -159,18 +191,10 @@ export class Holyrics {
         await delay(this.config.RETRY_TIME * 1000); // Wait for the configured retry time
         attempt++;
       }
-      this.logger.info('Reconnection successful.');
-      this.notifier.setStatus({
-        subject: 'holyrics',
-        items: { active: true },
-        logs: [
-          {
-            message: 'Holyrics reconnected successfully.',
-          },
-        ],
-      });
-    } finally {
-      this.isReconnecting = false;
+    } catch (error) {
+      const errorMessage = (error as Error).message.split('\n')[0];
+      this.logger.error('Failed during reconnection process', { error: errorMessage });
+      this.setConnectionState(ConnectionState.DISCONNECTED); // Explicitly set to disconnected on reconnection failure
     }
   };
 
@@ -205,7 +229,11 @@ export class Holyrics {
         });
       }
 
-      if (this.networkFailureCount >= this.config.MAX_NETWORK_FAILURES) {
+      if (
+        this.networkFailureCount >= this.config.MAX_NETWORK_FAILURES &&
+        this.connectionState !== ConnectionState.RECONNECTING &&
+        this.connectionState !== ConnectionState.CONNECTING
+      ) {
         this.logger.error(
           `Max network failures (${this.config.MAX_NETWORK_FAILURES}) reached. Triggering reconnection.`,
         );
@@ -226,11 +254,14 @@ export class Holyrics {
   private startPolling = async ({
     callback,
   }: { callback: (bibleVerse: BibleVerse | undefined) => void }): Promise<void> => {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.logger.debug('Previous polling interval cleared before setting a new one.');
+    }
     this.intervalId = setInterval(async () => {
-      if (this.isConnecting || this.isReconnecting) {
-        this.logger.debug('Polling skipped: page/browser not ready or connection/reconnection in progress.', {
-          isConnecting: this.isConnecting,
-          isReconnecting: this.isReconnecting,
+      if (this.connectionState !== ConnectionState.CONNECTED) {
+        this.logger.debug('Polling skipped: not in CONNECTED state.', {
+          connectionState: this.connectionState,
         });
         return;
       }
@@ -280,11 +311,11 @@ export class Holyrics {
             this.config.VERSION_SELECTOR,
           );
 
-          if (this.networkFailureCount > 0 || this.isConnecting) {
+          if (this.networkFailureCount > 0 || this.connectionState !== ConnectionState.CONNECTED) {
             if (this.previousBibleVerse) {
               this.previousBibleVerse = undefined;
               callback(undefined);
-              this.logger.info('Cleared previous Bible verse due to network issues or ongoing connection.');
+              this.logger.info('Cleared previous Bible verse due to network issues or non-CONNECTED state.');
             }
             return;
           }
@@ -324,7 +355,10 @@ export class Holyrics {
             ],
           });
 
-          if (!this.isConnecting && !this.isReconnecting) {
+          if (
+            this.connectionState !== ConnectionState.CONNECTING &&
+            this.connectionState !== ConnectionState.RECONNECTING
+          ) {
             this.logger.warn('DOM reading failed. Triggering reconnection to get a fresh page.');
             await this.handleReconnection();
           }
@@ -345,6 +379,14 @@ export class Holyrics {
   }): Promise<void> => {
     this.logger.info('Starting Holyrics monitoring (V2)');
 
+    if (
+      this.connectionState !== ConnectionState.DISCONNECTED &&
+      this.connectionState !== ConnectionState.RECONNECTING
+    ) {
+      this.logger.warn('Holyrics monitoring already active or in a transition state. Skipping new start request.');
+      return;
+    }
+
     // Ensure a connection is established or re-established before starting to poll.
     await this.handleReconnection();
 
@@ -359,11 +401,14 @@ export class Holyrics {
       items: { active: true },
     });
 
-    // Register a listener for the process's SIGINT signal for graceful shutdown.
-    process.on('SIGINT', async () => {
-      await this.destroy();
-      process.exit(0); // Exit after cleanup
-    });
+    // Register a listener for the process's SIGINT signal for graceful shutdown, only if not already registered.
+    if (!this.boundSigIntHandler) {
+      this.boundSigIntHandler = async () => {
+        await this.destroy();
+        process.exit(0); // Exit after cleanup
+      };
+      process.on('SIGINT', this.boundSigIntHandler);
+    }
   };
 
   /**
@@ -380,18 +425,23 @@ export class Holyrics {
       this.intervalId = undefined;
       this.logger.debug('Polling interval cleared.');
     }
+
     if (this.boundHandleRequestFailed) {
-      this.browserManager.manageListeners(async (page) => {
-        page.off('requestfailed', this.boundHandleRequestFailed);
-        this.boundHandleRequestFailed = undefined;
-        this.logger.debug('Detached requestfailed listener.');
-      });
+      // BrowserManager.close() should handle page listener cleanup.
+      // We just clear our internal reference.
+      this.boundHandleRequestFailed = undefined;
+      this.logger.debug('Cleared boundHandleRequestFailed reference.');
+    }
+
+    if (this.boundSigIntHandler) {
+      process.off('SIGINT', this.boundSigIntHandler);
+      this.boundSigIntHandler = undefined;
+      this.logger.debug('Detached SIGINT listener.');
     }
 
     await this.browserManager.close();
 
-    this.isConnecting = false;
-    this.isReconnecting = false;
+    this.setConnectionState(ConnectionState.DISCONNECTED);
     this.previousBibleVerse = undefined;
     this.networkFailureCount = 0;
 

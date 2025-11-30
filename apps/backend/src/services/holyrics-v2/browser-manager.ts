@@ -130,7 +130,7 @@ export class BrowserManager {
   }
 
   public isBrowserConnected(): boolean {
-    return !this.browser?.connected;
+    return this.browser?.connected || false; // `connected` is true if the browser is connected.
   }
 
   public async evaluate(evaluate: (page: Page) => Promise<void>) {

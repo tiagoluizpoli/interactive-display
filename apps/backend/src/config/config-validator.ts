@@ -51,17 +51,25 @@ export const validateConfig = <T extends ConfigType>(
 
   const parsed = schema.safeParse(configValues);
 
-  if (parsed.success) {
-    return parsed.data as z.infer<(typeof schemaMapper)[T]>;
+  if (!parsed.success) {
+    missingConfigs = Object.keys(parsed.error.flatten().fieldErrors);
+
+    logger.warn('Config has missing fields', { configType, missingConfigs });
+    notifier.setStatus({
+      subject: configType,
+      items: {
+        active: false,
+      },
+      logs: [
+        {
+          message: 'Config has missing fields',
+          context: { missingFields: missingConfigs.join(', ') },
+        },
+      ],
+    });
+
+    return undefined;
   }
 
-  missingConfigs = Object.keys(parsed.error.flatten().fieldErrors);
-
-  logger.warn('Config has missing fields', { configType, missingConfigs });
-  notifier.setStatus(configType, {
-    active: false,
-  });
-  notifier.addLogs(configType, ['Config has missing fields', `missing fields :: ${missingConfigs.join(', ')}`]);
-
-  return undefined;
+  return parsed.data as z.infer<(typeof schemaMapper)[T]>;
 };

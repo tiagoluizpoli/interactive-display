@@ -1,4 +1,5 @@
-import { HolyricsBible, ProPresenter } from './services';
+import { ProPresenter } from './services';
+import { Holyrics } from './services/holyrics-v2/holyrics';
 import { Orchestrator, MusicPresentation, BiblePresentation } from './presentations';
 import { ConfigRepository } from './db';
 import { Notifier, StatusNotifier, validateConfig } from './config';
@@ -40,12 +41,13 @@ const orchestrateHolyrics = async (
     localPersistence.removePresentation('holyrics');
     return;
   }
-  if (!localPersistence.isPresentationActive('holyrics')) {
-    const holyricsConnector = new HolyricsBible(validatedConfig, notifier);
-    const biblePresentation = new BiblePresentation(holyricsConnector);
 
-    localPersistence.addPresentation(biblePresentation);
-  }
+  if (localPersistence.isPresentationActive('holyrics')) localPersistence.removePresentation('holyrics');
+
+  const holyricsConnector = new Holyrics(validatedConfig, notifier);
+  const biblePresentation = new BiblePresentation(holyricsConnector);
+
+  localPersistence.addPresentation(biblePresentation);
 };
 
 const orchestrateProPresenter = async (
@@ -61,10 +63,11 @@ const orchestrateProPresenter = async (
     localPersistence.removePresentation('pro-presenter');
     return;
   }
-  if (!localPersistence.isPresentationActive('pro-presenter')) {
-    const holyricsConnector = new ProPresenter(validatedConfig, notifier);
-    const biblePresentation = new MusicPresentation(holyricsConnector);
 
-    localPersistence.addPresentation(biblePresentation);
-  }
+  if (localPersistence.isPresentationActive('pro-presenter')) localPersistence.removePresentation('pro-presenter');
+
+  const holyricsConnector = new ProPresenter(validatedConfig, notifier);
+  const biblePresentation = new MusicPresentation(holyricsConnector);
+
+  localPersistence.addPresentation(biblePresentation);
 };

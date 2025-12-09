@@ -43,6 +43,12 @@ export const useDashboardSocketConnection = () => {
     items: {},
   });
 
+  const [proPresenterNotifications, setProPresenterNotifications] = useState<StatusNotification2>({
+    subject: 'pro-presenter',
+    logs: [],
+    items: {},
+  });
+
   useEffect(() => {
     listenTo('notification.status', (data: Record<string, StatusNotification2>) => {
       if (data.holyrics) {
@@ -58,7 +64,22 @@ export const useDashboardSocketConnection = () => {
               logs: last.slice(-100),
             } satisfies StatusNotification2;
           });
-          console.log({ originalData: data.holyrics, parsedData: parsedData.data, stateData: holyricsNotifications });
+        }
+      }
+
+      if (data['pro-presenter']) {
+        const parsedData = statusNotificationSchema.safeParse(data['pro-presenter']);
+
+        if (parsedData.success) {
+          setProPresenterNotifications((prev) => {
+            const last = prev.logs;
+            last.push(...parsedData.data.logs);
+            return {
+              ...prev,
+              items: parsedData.data.items,
+              logs: last.slice(-100),
+            } satisfies StatusNotification2;
+          });
         }
       }
     });
@@ -67,8 +88,9 @@ export const useDashboardSocketConnection = () => {
   const memoizedValue = useMemo(
     () => ({
       holyricsNotifications,
+      proPresenterNotifications,
     }),
-    [holyricsNotifications],
+    [holyricsNotifications, proPresenterNotifications],
   );
 
   return memoizedValue;

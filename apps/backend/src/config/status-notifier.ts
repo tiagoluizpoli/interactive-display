@@ -103,8 +103,7 @@ export class StatusNotifier {
     if (logs?.length) {
       this.addLogs(subject, logs);
     }
-    // when merging generic partials into concrete union types.
-    // We need to cast 'items' here because TypeScript acts conservatively
+
     const currentStatus = this.statuses[subject];
 
     this.statuses[subject].items = {

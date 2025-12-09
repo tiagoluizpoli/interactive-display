@@ -21,8 +21,8 @@ export const makePresentations = async () => {
 
   logger.debug('starting orchestration');
   setInterval(async () => {
-    orchestrateHolyrics(orchestrator, configRepository, statusNotifier);
-    orchestrateProPresenter(orchestrator, configRepository, notifier);
+    await orchestrateHolyrics(orchestrator, configRepository, statusNotifier);
+    await orchestrateProPresenter(orchestrator, configRepository, notifier);
   }, 3000);
 
   return { orchestrator, notifier };
@@ -31,7 +31,7 @@ export const makePresentations = async () => {
 const orchestrateHolyrics = async (
   localPersistence: Orchestrator,
   configRepository: ConfigRepository,
-  notifier: StatusNotifier,
+  statusNotifier: StatusNotifier,
 ) => {
   const config = await configRepository.getConfigByCode('holyrics');
 
@@ -39,15 +39,17 @@ const orchestrateHolyrics = async (
 
   if (!validatedConfig) {
     localPersistence.removePresentation('holyrics');
+    logger.info('Holyrics configuration missing or invalid. Removed existing presentation.');
+
     return;
   }
 
-  if (localPersistence.isPresentationActive('holyrics')) localPersistence.removePresentation('holyrics');
-
-  const holyricsConnector = new Holyrics(validatedConfig, notifier);
-  const biblePresentation = new BiblePresentation(holyricsConnector);
-
-  localPersistence.addPresentation(biblePresentation);
+  if (!localPersistence.isPresentationActive('holyrics')) {
+    const holyricsConnector = new Holyrics(validatedConfig, statusNotifier);
+    const biblePresentation = new BiblePresentation(holyricsConnector);
+    localPersistence.addPresentation(biblePresentation);
+    logger.info('Added new Holyrics presentation.');
+  }
 };
 
 const orchestrateProPresenter = async (
@@ -61,13 +63,15 @@ const orchestrateProPresenter = async (
 
   if (!validatedConfig) {
     localPersistence.removePresentation('pro-presenter');
+    logger.info('ProPresenter configuration missing or invalid. Removed existing presentation.');
+
     return;
   }
 
-  if (localPersistence.isPresentationActive('pro-presenter')) localPersistence.removePresentation('pro-presenter');
-
-  const holyricsConnector = new ProPresenter(validatedConfig, notifier);
-  const biblePresentation = new MusicPresentation(holyricsConnector);
-
-  localPersistence.addPresentation(biblePresentation);
+  if (!localPersistence.isPresentationActive('pro-presenter')) {
+    const proPresenterConnector = new ProPresenter(validatedConfig, notifier);
+    const musicPresentation = new MusicPresentation(proPresenterConnector);
+    localPersistence.addPresentation(musicPresentation);
+    logger.info('Added new ProPresenter presentation.');
+  }
 };

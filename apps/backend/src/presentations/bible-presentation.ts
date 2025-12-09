@@ -10,7 +10,7 @@ export class BiblePresentation implements IPresentation {
   private bibleVerse: BibleVerse | null = null;
   private readonly logger = createChildLogger('BiblePresentation');
 
-  constructor(private readonly holyrics: Holyrics) {}
+  constructor(public readonly holyricsService: Holyrics) {} // Exposed as public for config updates
 
   private setBibleVerse = (bibleVerse?: BibleVerse) => {
     this.bibleVerse = bibleVerse ?? null;
@@ -19,7 +19,7 @@ export class BiblePresentation implements IPresentation {
 
   execute = async (): Promise<void> => {
     this.logger.info('Starting Bible output monitoring');
-    await this.holyrics.monitorBibleOutput({ callback: this.setBibleVerse });
+    await this.holyricsService.monitorBibleOutput({ callback: this.setBibleVerse });
   };
   setDisplayEnabled = (displayEnabled: boolean): void => {
     this.logger.warn('setDisplayEnabled not implemented', { displayEnabled });
@@ -37,6 +37,6 @@ export class BiblePresentation implements IPresentation {
 
   destroy(): void {
     this.logger.info('Destroying resources');
-    this.holyrics.destroy();
+    this.holyricsService.destroy();
   }
 }

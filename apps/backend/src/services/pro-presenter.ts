@@ -59,7 +59,7 @@ export class ProPresenter {
   private client: AxiosInstance;
 
   constructor(
-    params: ProPresenterConfig,
+    private params: ProPresenterConfig, // Made non-readonly to allow updateConfig
     private readonly notifier: Notifier,
   ) {
     const { HOST, PORT } = params;
@@ -276,4 +276,16 @@ export class ProPresenter {
     });
     this.retry({ setupStream, callback, stopped: false });
   };
+  public updateConfig(newConfig: ProPresenterConfig): void {
+    // Update the local config instance
+    this.params = newConfig;
+
+    // Recreate the axios client to reflect the new base URL if HOST or PORT changed
+    const { HOST, PORT } = newConfig;
+    this.client = axios.create({
+      baseURL: `http://${HOST}:${PORT}`,
+    });
+
+    this.logger.debug('ProPresenter configuration updated.', { newConfig });
+  }
 }

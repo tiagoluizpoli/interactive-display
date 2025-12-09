@@ -2,14 +2,10 @@ import type { HolyricsServiceConfig, StatusNotifier, BibleVerse } from './types'
 import { createChildLogger } from '@/config/logger';
 import { BrowserManager } from './browser-manager';
 import type { HTTPRequest } from 'puppeteer';
-import { delay } from '@/utils';
+import { MAX_DOM_READ_FAILURES } from './constants';
 
-enum ConnectionState {
-  DISCONNECTED = 'DISCONNECTED',
-  CONNECTING = 'CONNECTING',
-  CONNECTED = 'CONNECTED',
-  RECONNECTING = 'RECONNECTING',
-}
+const connectionStateOptions = ['STOPPED', 'DISCONNECTED', 'CONNECTING', 'CONNECTED'] as const;
+type ConnectionState = (typeof connectionStateOptions)[number];
 
 /**
  * @class Holyrics
@@ -22,13 +18,14 @@ export class Holyrics {
   private readonly logger;
   private previousBibleVerse?: BibleVerse;
   private intervalId?: NodeJS.Timeout;
-  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
+  private connectionState: ConnectionState = 'DISCONNECTED';
   private networkFailureCount = 0;
+  private domReadFailureCount = 0; // New property for tracking consecutive DOM read failures
   private boundHandleRequestFailed?: (request: HTTPRequest) => void;
   private boundSigIntHandler?: () => Promise<void>;
 
   constructor(
-    private readonly config: HolyricsServiceConfig,
+    private config: HolyricsServiceConfig, // Made non-readonly to allow updateConfig
     private readonly notifier: StatusNotifier,
   ) {
     this.logger = createChildLogger('Holyrics');
@@ -55,40 +52,40 @@ export class Holyrics {
     this.connectionState = newState;
   }
 
-  /**
-   * @method connectToHolyrics
-   * @description Attempts to establish a connection to the Holyrics web interface using the BrowserManager.
-   * This method ensures that the browser and page are launched and navigated to the target URL.
-   * It handles connection errors by closing the browser for cleanup and returning a failure status.
-   * @returns {Promise<boolean>} A promise that resolves to `true` if the connection is successful, `false` otherwise.
-   */
-  private connectToHolyrics = async (): Promise<boolean> => {
-    if (this.connectionState === ConnectionState.CONNECTING || this.connectionState === ConnectionState.CONNECTED) {
-      this.logger.debug(`Already ${this.connectionState}. Skipping new connection attempt.`);
-      return true; // Already connecting or connected, treat as success for idempotency
-    }
-
-    this.setConnectionState(ConnectionState.CONNECTING);
+  private connectToHolyricsV2 = async (): Promise<void> => {
+    this.setConnectionState('CONNECTING');
     try {
-      this.logger.info('Attempting to connect to Holyrics page.');
-      await this.browserManager.launch(); // Ensures a fresh browser/page
+      this.logger.info('Attempting to connect to Holyrics Page');
+      await this.browserManager.launch();
+
+      await this.browserManager.navigate(this.config.URL);
 
       this.browserManager.manageListeners(async (page) => {
-        // No need to call page.off here as a new page is launched, and old listeners are implicitly cleaned up
         this.boundHandleRequestFailed = this.handleRequestFailed.bind(this);
         page.on('requestfailed', this.boundHandleRequestFailed);
         await page.setRequestInterception(true);
-        page.on('request', (request) => request.continue());
+
+        page.on('request', (request) => {
+          request.continue();
+        });
+
+        page.on('response', (resp) => {
+          if (resp.status() === 200) {
+            this.notifier.setStatus({
+              subject: 'holyrics',
+              items: { active: true },
+              logs: this.networkFailureCount > 0 ? [{ message: 'Connection restored' }] : [],
+            });
+
+            this.networkFailureCount = 0;
+          }
+        });
 
         this.logger.debug('Puppeteer request interception enabled and listeners attached.');
       });
-
-      const navigationStartTime = process.hrtime.bigint();
-      await this.browserManager.navigate(this.config.URL);
-      const navigationEndTime = process.hrtime.bigint();
-      const navigationDurationMs = Number(navigationEndTime - navigationStartTime) / 1_000_000;
-
-      this.logger.info(`Successfully loaded Holyrics page in ${navigationDurationMs.toFixed(2)}ms`, {
+      this.setConnectionState('CONNECTED');
+      this.networkFailureCount = 0;
+      this.logger.info('Successfully loaded Holyrics page', {
         url: this.config.URL,
       });
 
@@ -97,7 +94,7 @@ export class Holyrics {
         items: { active: true },
         logs: [
           {
-            message: `Successfully loaded Holyrics page in ${navigationDurationMs.toFixed(2)}ms`,
+            message: 'Successfully loaded Holyrics page',
             context: {
               url: this.config.URL,
               openPages: await this.browserManager.getOpenPagesCount(),
@@ -105,10 +102,6 @@ export class Holyrics {
           },
         ],
       });
-
-      this.networkFailureCount = 0; // Reset network failure count on success
-      this.setConnectionState(ConnectionState.CONNECTED);
-      return true;
     } catch (error) {
       const errorMessage = (error as Error).message.split('\n')[0];
       this.logger.error('Failed to connect to Holyrics', {
@@ -129,81 +122,47 @@ export class Holyrics {
           },
         ],
       });
-
-      await this.browserManager.close(); // Close browser on connection failure
-      this.setConnectionState(ConnectionState.DISCONNECTED);
-      return false;
+      this.disconnect();
     }
   };
 
-  /**
-   * @method handleReconnection
-   * @description Manages the entire reconnection process.
-   * This method ensures only one reconnection attempt is active at a time.
-   * It gracefully closes any existing browser, then repeatedly attempts to connect
-   * until successful, introducing delays between attempts.
-   * @returns {Promise<void>}
-   */
-  private handleReconnection = async (): Promise<void> => {
-    if (this.connectionState === ConnectionState.RECONNECTING || this.connectionState === ConnectionState.CONNECTING) {
-      this.logger.debug(
-        `Reconnection already in progress or connecting. Current state: ${this.connectionState}. Skipping new attempt.`,
-      );
-      return;
+  private disconnect(): void {
+    this.setConnectionState('DISCONNECTED');
+
+    if (this.boundHandleRequestFailed) {
+      // BrowserManager.close() should handle page listener cleanup.
+      // We just clear our internal reference.
+      this.boundHandleRequestFailed = undefined;
+
+      this.logger.debug('Cleared boundHandleRequestFailed reference.');
     }
+  }
 
-    this.setConnectionState(ConnectionState.RECONNECTING);
-    try {
-      this.networkFailureCount = 0; // Reset network failure count at the start of a new reconnection sequence.
-      this.logger.info('Initiating full reconnection sequence. Closing existing browser.');
-      await this.browserManager.close(); // Ensure previous browser is fully purged
-
-      let attempt = 1;
-      while (this.connectionState !== ConnectionState.CONNECTED) {
-        if (await this.connectToHolyrics()) {
-          this.setConnectionState(ConnectionState.CONNECTED);
-          this.logger.info('Reconnection successful.');
-          this.notifier.setStatus({
-            subject: 'holyrics',
-            items: { active: true },
-            logs: [
-              {
-                message: 'Holyrics reconnected successfully.',
-              },
-            ],
-          });
-          break;
-        }
-
-        this.logger.warn(`Reconnection attempt ${attempt} failed. Retrying in ${this.config.RETRY_TIME} seconds.`);
-        this.notifier.setStatus({
-          subject: 'holyrics',
-          items: { active: false },
-          logs: [
-            {
-              message: `Reconnection attempt ${attempt} failed. Retrying...`,
-              context: {
-                retryTimeSeconds: this.config.RETRY_TIME,
-              },
-            },
-          ],
-        });
-        await delay(this.config.RETRY_TIME * 1000); // Wait for the configured retry time
-        attempt++;
+  private handleConnectionV2 = async (): Promise<void> => {
+    const intervalId = setInterval(() => {
+      if (this.connectionState === 'STOPPED') {
+        clearInterval(intervalId);
       }
-    } catch (error) {
-      const errorMessage = (error as Error).message.split('\n')[0];
-      this.logger.error('Failed during reconnection process', { error: errorMessage });
-      this.setConnectionState(ConnectionState.DISCONNECTED); // Explicitly set to disconnected on reconnection failure
-    }
+
+      if (this.connectionState === 'CONNECTED') {
+        return;
+      }
+
+      if (this.connectionState === 'CONNECTING') {
+        this.logger.debug('Connection already in progress. Skipping new attempt.');
+        return;
+      }
+
+      this.connectToHolyricsV2();
+    }, 3 * 1000);
   };
 
-  private handleRequestFailed = (request: HTTPRequest) => {
+  private handleRequestFailed = async (request: HTTPRequest) => {
     const failure = request.failure();
 
     if (
       failure &&
-      (failure.errorText === 'net::ERR_CONNECTION_REFUSED' || failure.errorText === 'canceled') &&
+      (failure.errorText.includes('ERR_CONNECTION_REFUSED') || failure.errorText.includes('canceled')) &&
       request.url().includes(this.config.URL) &&
       this.browserManager.isPageOpen()
     ) {
@@ -213,44 +172,30 @@ export class Holyrics {
         maxFailures: this.config.MAX_NETWORK_FAILURES,
       });
 
-      if (this.networkFailureCount === 1) {
-        this.notifier.setStatus({
-          subject: 'holyrics',
-          items: { active: false },
-          logs: [
-            {
-              message: 'Holyrics connection issue detected. Attempting to recover...',
-              context: {
-                url: this.config.URL,
-                failureCount: this.networkFailureCount,
-              },
+      this.notifier.setStatus({
+        subject: 'holyrics',
+        items: { active: false },
+        logs: [
+          {
+            message: 'Holyrics connection issue detected. Attempting to recover...',
+            context: {
+              url: this.config.URL,
+              failureCount: this.networkFailureCount,
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
 
-      if (
-        this.networkFailureCount >= this.config.MAX_NETWORK_FAILURES &&
-        this.connectionState !== ConnectionState.RECONNECTING &&
-        this.connectionState !== ConnectionState.CONNECTING
-      ) {
+      if (this.networkFailureCount >= this.config.MAX_NETWORK_FAILURES) {
         this.logger.error(
           `Max network failures (${this.config.MAX_NETWORK_FAILURES}) reached. Triggering reconnection.`,
         );
-        this.handleReconnection();
+        this.networkFailureCount = 0;
+        this.disconnect();
       }
     }
   };
 
-  /**
-   * @method startPolling
-   * @description Initiates a continuous polling mechanism to scrape Bible verse data from the Holyrics page.
-   * This method uses `setInterval` to periodically execute logic for DOM scraping and health checks.
-   * It prevents polling if the page is not available or if a connection attempt is in progress.
-   * If the page or browser is disconnected/crashed, it triggers a full reconnection.
-   * @param {MonitorBibleOutputParams} { callback } - A callback function to be invoked with updated Bible verses.
-   * @returns {Promise<void>}
-   */
   private startPolling = async ({
     callback,
   }: { callback: (bibleVerse: BibleVerse | undefined) => void }): Promise<void> => {
@@ -258,26 +203,16 @@ export class Holyrics {
       clearInterval(this.intervalId);
       this.logger.debug('Previous polling interval cleared before setting a new one.');
     }
+
     this.intervalId = setInterval(async () => {
-      if (this.connectionState !== ConnectionState.CONNECTED) {
+      if (this.connectionState !== 'CONNECTED' || this.networkFailureCount > 0) {
+        this.previousBibleVerse = undefined;
+        callback(undefined);
+        this.logger.info('Cleared previous Bible verse due to network issues or non-CONNECTED state.');
+
         this.logger.debug('Polling skipped: not in CONNECTED state.', {
           connectionState: this.connectionState,
         });
-        return;
-      }
-
-      if (!this.browserManager.isBrowserConnected() || !this.browserManager.isPageOpen()) {
-        this.logger.error('Page or browser is disconnected/crashed. Attempting reconnection.');
-        this.notifier.setStatus({
-          subject: 'holyrics',
-          items: { active: false },
-          logs: [
-            {
-              message: 'Page or browser is disconnected/crashed. Attempting reconnection.',
-            },
-          ],
-        });
-        await this.handleReconnection();
         return;
       }
 
@@ -311,7 +246,11 @@ export class Holyrics {
             this.config.VERSION_SELECTOR,
           );
 
-          if (this.networkFailureCount > 0 || this.connectionState !== ConnectionState.CONNECTED) {
+          if (currentBibleVerse) {
+            this.domReadFailureCount = 0; // Reset DOM read failure count on successful read
+          }
+
+          if (this.connectionState !== 'CONNECTED') {
             if (this.previousBibleVerse) {
               this.previousBibleVerse = undefined;
               callback(undefined);
@@ -341,65 +280,45 @@ export class Holyrics {
           callback(currentBibleVerse);
           this.logger.debug('New Bible verse detected and callback invoked.', { verse: currentBibleVerse.reference });
         } catch (error) {
+          this.domReadFailureCount++; // Increment on DOM read failure
           const errorMessage = (error as Error).message.split('\n')[0];
-          this.logger.error('Failed to read DOM during polling', { error: errorMessage });
+          this.logger.error('Failed to read DOM during polling', {
+            error: errorMessage,
+            currentFailures: this.domReadFailureCount,
+            maxFailures: MAX_DOM_READ_FAILURES,
+          });
 
           this.notifier.setStatus({
             subject: 'holyrics',
             items: { active: false },
             logs: [
               {
-                message: 'Failed to read DOM during polling. Attempting reconnection.',
-                context: { errorMessage },
+                message: 'Failed to read DOM during polling. Attempting recovery.',
+                context: { errorMessage, currentDomReadFailures: this.domReadFailureCount },
               },
             ],
           });
 
-          if (
-            this.connectionState !== ConnectionState.CONNECTING &&
-            this.connectionState !== ConnectionState.RECONNECTING
-          ) {
-            this.logger.warn('DOM reading failed. Triggering reconnection to get a fresh page.');
-            await this.handleReconnection();
+          // Trigger full reconnection only if DOM read failures exceed threshold and not already reconnecting
+          if (this.domReadFailureCount >= MAX_DOM_READ_FAILURES) {
+            this.logger.warn(`Max DOM read failures (${MAX_DOM_READ_FAILURES}) reached. Triggering full reconnection.`);
+            this.disconnect();
           }
         }
       });
     }, this.config.POLLING_INTERVAL_MS);
   };
 
-  /**
-   * @method monitorBibleOutput
-   * @description The main public method to start monitoring Holyrics for Bible verse updates.
-   * It initiates a robust connection, starts polling, and registers a SIGINT handler for graceful shutdown.
-   * @param {{ callback: (bibleVerse: BibleVerse | undefined) => void }} params - An object containing the `callback` function.
-   * @returns {Promise<void>}
-   */
   public monitorBibleOutput = async (params: {
     callback: (bibleVerse: BibleVerse | undefined) => void;
   }): Promise<void> => {
     this.logger.info('Starting Holyrics monitoring (V2)');
 
-    if (
-      this.connectionState !== ConnectionState.DISCONNECTED &&
-      this.connectionState !== ConnectionState.RECONNECTING
-    ) {
-      this.logger.warn('Holyrics monitoring already active or in a transition state. Skipping new start request.');
-      return;
-    }
+    await this.handleConnectionV2();
 
-    // Ensure a connection is established or re-established before starting to poll.
-    await this.handleReconnection();
-
-    // Begin the continuous polling for Bible verse updates.
     this.startPolling(params);
 
     this.logger.info('Holyrics monitoring (V2) started.');
-
-    // Update the system status to indicate that Holyrics monitoring is active.
-    this.notifier.setStatus({
-      subject: 'holyrics',
-      items: { active: true },
-    });
 
     // Register a listener for the process's SIGINT signal for graceful shutdown, only if not already registered.
     if (!this.boundSigIntHandler) {
@@ -411,12 +330,6 @@ export class Holyrics {
     }
   };
 
-  /**
-   * @method destroy
-   * @description Performs a comprehensive cleanup of all resources managed by the `Holyrics` instance.
-   * This includes clearing the polling interval and gracefully closing the browser via `BrowserManager`.
-   * @returns {Promise<void>}
-   */
   public destroy = async (): Promise<void> => {
     this.logger.info('Cleaning up Holyrics (V2) resources.');
 
@@ -441,9 +354,10 @@ export class Holyrics {
 
     await this.browserManager.close();
 
-    this.setConnectionState(ConnectionState.DISCONNECTED);
+    this.setConnectionState('STOPPED');
     this.previousBibleVerse = undefined;
     this.networkFailureCount = 0;
+    this.domReadFailureCount = 0; // Reset DOM read failure count on destroy
 
     this.notifier.setStatus({
       subject: 'holyrics',
@@ -456,4 +370,9 @@ export class Holyrics {
     });
     this.logger.info('Holyrics (V2) resources cleaned up successfully.');
   };
+
+  public updateConfig(newConfig: HolyricsServiceConfig): void {
+    Object.assign(this.config, newConfig);
+    this.logger.debug('Holyrics configuration updated.', { newConfig });
+  }
 }

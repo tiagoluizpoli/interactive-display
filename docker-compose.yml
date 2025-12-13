@@ -3,7 +3,7 @@ services:
     container_name: backend
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: apps/backend/Dockerfile   
     ports:
       - "5000:5000"
     volumes:
@@ -11,7 +11,7 @@ services:
       - /app/apps/backend/node_modules
       - ./app/data:/app/data
     env_file:
-      - apps/backend/.env
+      - apps/backend/.env   
     environment:
       - NODE_ENV=development
     restart: always
@@ -21,7 +21,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "512M"
+          memory: "256M"
 
   frontend:
     container_name: frontend

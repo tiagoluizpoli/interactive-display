@@ -3,7 +3,7 @@ import type { Music } from '@/models/music';
 import type { Readable } from 'node:stream';
 import { createChildLogger } from '../config/logger';
 import axios from 'axios';
-import type { Notifier, ProPresenterConfig } from '@/config';
+import type { ProPresenterConfig, StatusNotifier } from '@/config';
 
 export interface Slide {
   is_playing: boolean;
@@ -60,7 +60,7 @@ export class ProPresenter {
 
   constructor(
     private params: ProPresenterConfig, // Made non-readonly to allow updateConfig
-    private readonly notifier: Notifier,
+    private readonly notifier: StatusNotifier,
   ) {
     const { HOST, PORT } = params;
     this.client = axios.create({
@@ -83,12 +83,12 @@ export class ProPresenter {
             error: (error as Error).message,
           });
 
-          this.notifier.addNotification({
-            type: 'connection-issue',
-            layer: 'pro-presenter',
-            context: {
-              message: 'Error fetching presentation details',
+          this.notifier.setStatus({
+            subject: 'pro-presenter',
+            items: {
+              active: false,
             },
+            logs: [{ message: 'Error fetching presentation details' }],
           });
         }
       },
@@ -134,14 +134,19 @@ export class ProPresenter {
         stream = response.data;
         this.logger.info('Connected to ProPresenter stream successfully', { route });
 
-        this.notifier.addNotification({
-          type: 'status',
-          layer: 'pro-presenter',
-          context: {
-            message: 'pro-presenter on',
-            data: { status: true },
+        this.notifier.setStatus({
+          subject: 'pro-presenter',
+          items: {
+            active: true,
           },
+          logs: [
+            {
+              message: 'Connected to ProPresenter stream successfully',
+              context: { route },
+            },
+          ],
         });
+
         this.onData<TResult>(response, (data) => {
           if (!stopped) {
             dataCallback(data);
@@ -149,14 +154,19 @@ export class ProPresenter {
         });
 
         stream!.on('end', () => {
-          this.notifier.addNotification({
-            type: 'status',
-            layer: 'pro-presenter',
-            context: {
-              message: 'pro-presenter off',
-              data: { status: false },
+          this.notifier.setStatus({
+            subject: 'pro-presenter',
+            items: {
+              active: false,
             },
+            logs: [
+              {
+                message: 'pro-presenter off',
+                context: { route },
+              },
+            ],
           });
+
           this.retry({
             setupStream,
             logMessage: 'Stream ended. Reconnecting.',
@@ -166,26 +176,19 @@ export class ProPresenter {
           });
         });
         stream!.on('error', (err: any) => {
-          this.notifier.addNotification([
-            {
-              type: 'status',
-              layer: 'pro-presenter',
-              context: {
+          this.notifier.setStatus({
+            subject: 'pro-presenter',
+            items: {
+              active: false,
+            },
+            logs: [
+              {
                 message: 'pro-presenter off',
-                data: { status: false },
+                context: { route },
               },
-            },
-            {
-              type: 'propresenter-issue',
-              layer: 'pro-presenter',
-              context: {
-                message: 'ProPresenter stream error',
-                data: {
-                  error: err.message,
-                },
-              },
-            },
-          ]);
+            ],
+          });
+
           this.retry({
             setupStream,
             logMessage: 'Stream error.',
@@ -237,16 +240,14 @@ export class ProPresenter {
     const isConnectionRefused = code === 'ECONNREFUSED' || code === 'ECONNRESET';
 
     if (isConnectionRefused) {
-      this.notifier.addNotification({
-        type: 'connection-issue',
-        layer: 'pro-presenter',
-        context: {
-          message: 'ProPresenter connection refused',
-          data: {
-            url: this.client.defaults.baseURL,
-          },
+      this.notifier.setStatus({
+        subject: 'pro-presenter',
+        items: {
+          active: false,
         },
+        logs: [{ message: 'ProPresenter connection refused', context: { code, url: this.client.defaults.baseURL } }],
       });
+
       this.retry({
         setupStream,
         logMessage: 'ProPresenter connection refused. Retrying.',
@@ -262,18 +263,20 @@ export class ProPresenter {
       code: axiosError.code,
       status: axiosError.response?.status,
     });
-    this.notifier.addNotification({
-      type: 'connection-issue',
-      layer: 'pro-presenter',
-      context: {
-        message: 'Error connecting to ProPresenter',
-        data: {
-          url: this.client.defaults.baseURL,
-          code: axiosError.code,
-          status: axiosError.response?.status,
-        },
+
+    this.notifier.setStatus({
+      subject: 'pro-presenter',
+      items: {
+        active: false,
       },
+      logs: [
+        {
+          message: 'Error connecting to ProPresenter',
+          context: { code, url: this.client.defaults.baseURL, status: axiosError.response?.status },
+        },
+      ],
     });
+
     this.retry({ setupStream, callback, stopped: false });
   };
   public updateConfig(newConfig: ProPresenterConfig): void {

@@ -2,26 +2,26 @@ import { ProPresenter } from './services';
 import { Holyrics } from './services/holyrics-v2/holyrics';
 import { Orchestrator, MusicPresentation, BiblePresentation } from './presentations';
 import { ConfigRepository } from './db';
-import { Notifier, StatusNotifier, validateConfig } from './config';
+import { StatusNotifier, validateConfig } from './config';
 import { createChildLogger } from './config/logger';
 
 export interface MakePrsentation {
   orchestrator: Orchestrator;
-  notifier: Notifier;
+  notifier: StatusNotifier;
 }
 
 const logger = createChildLogger('makePresentations');
 
 export const makePresentations = async () => {
   const configRepository = ConfigRepository.getInstance();
-  const notifier = Notifier.getInstance();
-  const statusNotifier = StatusNotifier.getInstance();
+
+  const notifier = StatusNotifier.getInstance();
 
   const orchestrator = new Orchestrator();
 
   logger.debug('starting orchestration');
   setInterval(async () => {
-    await orchestrateHolyrics(orchestrator, configRepository, statusNotifier);
+    await orchestrateHolyrics(orchestrator, configRepository, notifier);
     await orchestrateProPresenter(orchestrator, configRepository, notifier);
   }, 3000);
 
@@ -55,7 +55,7 @@ const orchestrateHolyrics = async (
 const orchestrateProPresenter = async (
   localPersistence: Orchestrator,
   configRepository: ConfigRepository,
-  notifier: Notifier,
+  notifier: StatusNotifier,
 ) => {
   const config = await configRepository.getConfigByCode('pro-presenter');
 

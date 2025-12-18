@@ -1,9 +1,55 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "52501684-8377-4b70-80ca-2531472e63e7",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "4b99aa8b-2b3c-4dc6-9efc-45ed0e14e01d",
+  "prevId": "52501684-8377-4b70-80ca-2531472e63e7",
   "tables": {
+    "active_styles": {
+      "name": "active_styles",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "style_id": {
+          "name": "style_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "active_styles_code_unique": {
+          "name": "active_styles_code_unique",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "active_styles_style_id_styles_id_fk": {
+          "name": "active_styles_style_id_styles_id_fk",
+          "tableFrom": "active_styles",
+          "tableTo": "styles",
+          "columnsFrom": [
+            "style_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "config": {
       "name": "config",
       "columns": {

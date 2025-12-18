@@ -21,8 +21,8 @@ export const makePresentations = async () => {
 
   logger.debug('starting orchestration');
   setInterval(async () => {
-    await orchestrateHolyrics(orchestrator, configRepository, notifier);
-    await orchestrateProPresenter(orchestrator, configRepository, notifier);
+    // await orchestrateHolyrics(orchestrator, configRepository, notifier);
+    // await orchestrateProPresenter(orchestrator, configRepository, notifier);
   }, 3000);
 
   return { orchestrator, notifier };

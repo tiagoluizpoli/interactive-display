@@ -1,5 +1,6 @@
 import { db } from './database-setup';
 import { configTable, configValuesTable } from './schema';
+import { seedStyles } from './style-targets';
 
 const main = async () => {
   console.log('Clearing existing data...');
@@ -26,6 +27,8 @@ const main = async () => {
     { configId: proPresenterConfig.id, key: 'HOST', value: '192.168.0.200' },
     { configId: proPresenterConfig.id, key: 'PORT', value: '8999' },
   ]);
+
+  await seedStyles();
 
   console.log('Database seeding complete.');
 };

@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { io } from '../server';
 import { configRoutes } from './config';
+import { styleRoutes } from './styles';
 
 export const router = Router();
 
 router.use('/config', configRoutes);
+router.use('/styles', styleRoutes);
 
 router.get('/', (_, res) => {
   res.status(200).json({

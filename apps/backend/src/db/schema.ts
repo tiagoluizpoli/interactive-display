@@ -1,6 +1,8 @@
-import { sqliteTable, text, primaryKey } from 'drizzle-orm/sqlite-core';
-import { relations } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import { relations } from 'drizzle-orm';
+import { primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
+const presentationTypes = ['music', 'bible'] as const;
 
 export const configTable = sqliteTable('config', {
   id: text('id')
@@ -33,28 +35,76 @@ export const configValueRelations = relations(configValuesTable, ({ one }) => ({
   }),
 }));
 
-export const presentationStylesTable = sqliteTable('presentation_styles', {
-  id: text('id').$defaultFn(() => randomUUID()),
-  name: text('name').notNull(),
-  type: text('type').notNull(),
-});
+export const stylesTable = sqliteTable(
+  'styles',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    type: text('type', { enum: presentationTypes }).notNull(),
+    name: text('name').notNull(),
+  },
+  (table) => [uniqueIndex('presentation_styles_name_type_unique').on(table.type, table.name)],
+);
 
-export const styleTargetsTable = sqliteTable('style_targets', {
-  id: text('id').$defaultFn(() => randomUUID()),
+export const styleAvailableTargetsTable = sqliteTable(
+  'style_available_targets',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    type: text('type', { enum: presentationTypes }).notNull(),
+    target: text('target').notNull(),
+    description: text('description'),
+  },
+  (table) => [uniqueIndex('style_targets_type_target_unique').on(table.type, table.target)],
+);
+
+export const styleTargetsClassesTable = sqliteTable(
+  'style_targets_classes',
+  {
+    styleTargetId: text('style_target_id')
+      .notNull()
+      .references(() => styleAvailableTargetsTable.id),
+    styleId: text('style_id')
+      .notNull()
+      .references(() => stylesTable.id),
+    classes: text('classes').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.styleTargetId, table.styleId] })],
+);
+
+export const activeStylesTable = sqliteTable('active_styles', {
+  code: text('code', { enum: presentationTypes }).unique().notNull(),
   styleId: text('style_id')
     .notNull()
-    .references(() => presentationStylesTable.id),
-  target: text('target').notNull(),
-  classes: text('classes').notNull(),
+    .references(() => stylesTable.id),
 });
 
-export const presentationStyleRelations = relations(presentationStylesTable, ({ many }) => ({
-  targets: many(styleTargetsTable),
+export const activeStylesRelations = relations(activeStylesTable, ({ one }) => ({
+  style: one(stylesTable, {
+    fields: [activeStylesTable.styleId],
+    references: [stylesTable.id],
+  }),
 }));
 
-export const stylePropertyRelations = relations(styleTargetsTable, ({ one }) => ({
-  style: one(presentationStylesTable, {
-    fields: [styleTargetsTable.styleId],
-    references: [presentationStylesTable.id],
+export const presentationStyleRelations = relations(stylesTable, ({ many }) => ({
+  targets: many(styleAvailableTargetsTable),
+  classes: many(styleTargetsClassesTable),
+  activeStyles: many(activeStylesTable),
+}));
+
+export const stylePropertyRelations = relations(styleAvailableTargetsTable, ({ many }) => ({
+  classes: many(styleTargetsClassesTable),
+}));
+
+export const styleClassesRelations = relations(styleTargetsClassesTable, ({ one }) => ({
+  styleTarget: one(styleAvailableTargetsTable, {
+    fields: [styleTargetsClassesTable.styleTargetId],
+    references: [styleAvailableTargetsTable.id],
+  }),
+  style: one(stylesTable, {
+    fields: [styleTargetsClassesTable.styleId],
+    references: [stylesTable.id],
   }),
 }));

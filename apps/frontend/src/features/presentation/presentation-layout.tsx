@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePresentationConnection, type BibleSlide, type Slide } from './presentation-connection';
+import { type BibleSlide, type Slide, usePresentationConnection } from './presentation-connection';
 const transitionTime = 0.2;
 
 export const Presentation = () => {
@@ -24,10 +24,15 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
 
   return (
     <MotionWrapper key={`${slide.text}-${displayEnabled}`}>
-      <div className="w-full p-4 flex justify-center">
-        <div className="w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl">
+      <div id="container" className="w-full p-4 flex justify-center">
+        <div
+          id="text-container"
+          className="w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl"
+        >
           {lines.map((line, index) => (
-            <p key={index}>{line}</p>
+            <p id="text" key={index}>
+              {line}
+            </p>
           ))}
         </div>
       </div>
@@ -38,16 +43,24 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
 const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
   return (
     <MotionWrapper key={`${bibleSlide.reference}-${bibleSlide.text}`}>
-      {/* <div className="font-bold bg-[rgba(0,0,0,0.8)] w-full font-sans flex flex-col items-start gap-2 px-8 pb-8"> */}
-      {/* <span className="w-fit font-bold text-5xl bg-white p-4 rounded-xl -mt-10 mb-2">{bibleSlide.reference}</span> */}
-      <div className="w-full p-4">
-        <div className="bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl">
-          <div className="flex items-start gap-4 pb-4 mb-2">
-            <span className="w-fit font-bold text-5xl text-white  rounded-xl">{bibleSlide.reference}</span>
-            <span className="text-2xl font-thin text-white">{bibleSlide.version}</span>
+      
+      <div id="container" className="w-full p-4">
+        <div
+          id="inner-container"
+          className="bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl"
+        >
+          <div id="reference-container" className="flex items-start gap-4 pb-4 mb-2">
+            <span id="reference" className="w-fit font-bold text-5xl text-white rounded-xl">
+              {bibleSlide.reference}
+            </span>
+            <span id="version" className="text-2xl font-thin text-white">
+              {bibleSlide.version}
+            </span>
           </div>
-          <div className="w-full">
-            <p className="text-5xl text-white">{bibleSlide.text}</p>
+          <div id="text-container" className="w-full">
+            <p id="text" className="text-5xl text-white">
+              {bibleSlide.text}
+            </p>
           </div>
         </div>
       </div>

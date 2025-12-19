@@ -1,10 +1,11 @@
 import { createBrowserRouter, Outlet } from 'react-router';
 import { Layout } from '../layout';
-import { DashboardView, Presentation } from '@/src/features';
+import { DashboardView, Presentation, StylesLayout } from '@/src/features';
 
 export const layoutRouteNames = {
   baseRoute: '/',
   presentation: '/presentation',
+  styles: '/styles',
 };
 
 function App() {
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardView />,
+      },
+      {
+        path: layoutRouteNames.styles,
+        element: <StylesLayout />,
       },
     ],
   },

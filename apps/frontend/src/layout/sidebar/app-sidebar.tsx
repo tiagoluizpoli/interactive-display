@@ -10,11 +10,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '../../components/ui/sidebar';
 import { layoutRouteNames } from '@/src/routes';
 import { Button } from '@/src/components/ui/button';
 
 import { toast } from 'sonner';
+import { cn } from '@/src/lib/utils';
 
 interface MenuItem {
   title: string;
@@ -33,11 +35,20 @@ interface Group {
 }
 
 export const AppSidebar = () => {
+  const { open } = useSidebar();
   const dashboards: MenuItem[] = [
     {
       title: 'Dashboard',
       to: layoutRouteNames.baseRoute,
       icon: 'ri:dashboard-line',
+    },
+  ];
+
+  const configs: MenuItem[] = [
+    {
+      icon: 'mdi:paint-outline',
+      title: 'Estilos',
+      to: layoutRouteNames.styles,
     },
   ];
 
@@ -60,6 +71,10 @@ export const AppSidebar = () => {
       items: dashboards,
     },
     {
+      title: 'Configurações',
+      items: configs,
+    },
+    {
       title: 'Telas',
       items: telas,
     },
@@ -72,7 +87,10 @@ export const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-2!">
               <Link to="/" className="flex items-center flex-col gap-2 h-28">
-                <Icon icon={'material-symbols:interactive-space-outline'} className="size-14!" />
+                <Icon
+                  icon={'material-symbols:interactive-space-outline'}
+                  className={cn('transition-all duration-200 ease-linear', open ? 'size-14!' : 'size-6!')}
+                />
 
                 <span className="text-base font-semibold">Interactive Display</span>
               </Link>

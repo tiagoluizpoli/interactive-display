@@ -1,10 +1,10 @@
 import { Button } from '@/src/components/ui/button';
-import { columns, DataTable } from '../../components';
+import { columns, DataTable } from '../components';
 import { Icon } from '@iconify/react';
-import { useStyle } from '../../core';
+import { useStyle } from '../core';
 
-export const BibleTable = () => {
-  const { data, isLoading } = useStyle({ type: 'bible' });
+export const MusicTab = () => {
+  const { data, isLoading } = useStyle({ type: 'music' });
 
   return (
     <div className="flex flex-col gap-4 pt-2">

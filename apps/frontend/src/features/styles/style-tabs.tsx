@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
-import { BibleTable } from './features/bible/bible-table';
+import { BibleTab } from './tabs/bible-tab';
 import type { ReactNode } from 'react';
+import { MusicTab } from './tabs/music-tab';
 interface StyleTabsProps {
   code: string;
   name: string;
@@ -11,12 +12,12 @@ export const StyleTabs = () => {
     {
       code: 'bible',
       name: 'Bíblia',
-      content: <BibleTable />,
+      content: <BibleTab />,
     },
     {
       code: 'music',
       name: 'Música',
-      content: <div>Música</div>,
+      content: <MusicTab />,
     },
   ];
 

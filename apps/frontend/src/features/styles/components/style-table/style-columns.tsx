@@ -38,15 +38,24 @@ export const columns: ColumnDef<StyleListItem>[] = [
     header: 'Ações',
     size: 100,
     enableResizing: false,
-    cell: () => (
-      <ButtonGroup>
+    cell: ({ row }) => (
+      <div className="flex gap-2">
         <Button size={'sm'} className="cursor-pointer w-10">
-          <Icon icon={'tabler:edit'} />
+          <Icon
+            icon={'foundation:check'}
+            color={row.getIsSelected() ? 'green' : undefined}
+            className="transition-all duration-300 ease-in-out"
+          />
         </Button>
-        <Button size={'sm'} className="cursor-pointer w-10" variant={'destructive'}>
-          <Icon icon={'fluent-mdl2:erase-tool'} />
-        </Button>
-      </ButtonGroup>
+        <ButtonGroup>
+          <Button size={'sm'} className="cursor-pointer w-10">
+            <Icon icon={'tabler:edit'} />
+          </Button>
+          <Button size={'sm'} className="cursor-pointer w-10" variant={'destructive'}>
+            <Icon icon={'fluent-mdl2:erase-tool'} />
+          </Button>
+        </ButtonGroup>
+      </div>
     ),
   },
 ];

@@ -1,9 +1,12 @@
-import { columns, CreateStyleForm, DataTable } from '../components';
-import { useGetTargetsQuery, useStyleQuery } from '../core';
+import { GetTableColumns, CreateStyleForm, DataTable } from '../components';
+import { useDeleteStyleMutation, useGetTargetsQuery, useSetDefaultStyleMutation, useStyleQuery } from '../core';
 
 export const BibleTab = () => {
   const { data, isLoading } = useStyleQuery({ type: 'bible' });
   const { data: targets, isLoading: targetsIsLoading } = useGetTargetsQuery({ type: 'bible' });
+
+  const { mutateAsync: setDefaultMutateAsync } = useSetDefaultStyleMutation({ type: 'bible' });
+  const { mutateAsync: deleteMutateAsync } = useDeleteStyleMutation({ type: 'bible' });
 
   if (targetsIsLoading) {
     return <div>Loading...</div>;
@@ -16,6 +19,8 @@ export const BibleTab = () => {
   if (!data) {
     return <div>No styles found.</div>;
   }
+
+  const columns = GetTableColumns({ setDefaultMutateAsync, deleteMutateAsync });
 
   return (
     <div className="flex flex-col gap-4 pt-2">

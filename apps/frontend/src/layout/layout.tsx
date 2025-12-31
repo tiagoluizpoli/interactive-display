@@ -20,7 +20,7 @@ export const Layout = ({ children }: ParentType) => {
         </header>
         <main className="w-full p-4">
           {children}
-          <Toaster />
+          <Toaster visibleToasts={5} />
         </main>
       </SidebarInset>
     </>

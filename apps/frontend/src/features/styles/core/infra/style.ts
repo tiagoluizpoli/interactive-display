@@ -91,3 +91,32 @@ export const useSetDefaultStyleMutation = ({ type }: { type: string }) => {
 
   return { ...mutation };
 };
+
+export const deleteStyle = async (styleId: string) => {
+  const response = await httpClient.delete(`/styles/${styleId}`);
+  return response.data;
+};
+
+export const useDeleteStyleMutation = ({ type }: { type: string }) => {
+  const client = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: deleteStyle,
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: queryKeys.styles.byType(type) });
+    },
+    onSuccess: (resp) => {
+      toast.success(resp.message);
+    },
+    onError: (error) => {
+      if (isAxiosError(error)) {
+        toast.error(error.response?.data.message);
+        return;
+      }
+
+      toast.error(error.message);
+    },
+  });
+
+  return { ...mutation };
+};

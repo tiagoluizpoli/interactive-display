@@ -25,12 +25,13 @@ export const DataTable = <TData, TValue>({ columns, data, isLoading }: DataTable
             return (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header, index) => {
-                  const isFirst = index === 0;
-                  const isLast = index === headerGroup.headers.length - 1;
+                  const isFirst = index === 0 ? 'w-12' : undefined;
+                  const isSecound = index === 1 ? 'w-24' : undefined;
+                  const isLast = index === headerGroup.headers.length - 1 ? 'w-[100px] text-center' : undefined;
                   return (
                     <TableHead
                       key={header.id}
-                      className={cn(isFirst && 'w-12', isLast && 'w-[100px] text-center')} // Fix the last one
+                      className={cn(isFirst, isSecound, isLast)} // Fix the last one
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>

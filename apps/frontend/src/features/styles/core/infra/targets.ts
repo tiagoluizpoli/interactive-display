@@ -17,7 +17,7 @@ export const getTargets = async ({ type }: GetTargetsParams) => {
   return targets.data;
 };
 
-export const useTargets = ({ type }: GetTargetsParams) => {
+export const useGetTargetsQuery = ({ type }: GetTargetsParams) => {
   const query = useQuery<TargetListItem[]>({
     queryKey: queryKeys.targets.byType(type),
     queryFn: async ({ queryKey }) => await getTargets({ type: queryKey[1] as string }),

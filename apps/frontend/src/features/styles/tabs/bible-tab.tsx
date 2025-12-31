@@ -1,17 +1,26 @@
-import { Button } from '@/src/components/ui/button';
-import { columns, DataTable } from '../components';
-import { Icon } from '@iconify/react';
-import { useStyle } from '../core';
+import { columns, CreateStyleForm, DataTable } from '../components';
+import { useGetTargetsQuery, useStyleQuery } from '../core';
 
 export const BibleTab = () => {
-  const { data, isLoading } = useStyle({ type: 'bible' });
+  const { data, isLoading } = useStyleQuery({ type: 'bible' });
+  const { data: targets, isLoading: targetsIsLoading } = useGetTargetsQuery({ type: 'bible' });
+
+  if (targetsIsLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!targets) {
+    return <div>No targets found.</div>;
+  }
+
+  if (!data) {
+    return <div>No styles found.</div>;
+  }
 
   return (
     <div className="flex flex-col gap-4 pt-2">
       <div className="flex justify-end">
-        <Button className="flex items-center cursor-pointer">
-          <Icon icon={'qlementine-icons:new-16'} /> Novo
-        </Button>
+        <CreateStyleForm type="bible" targets={targets} />
       </div>
       <DataTable columns={columns} data={data ?? []} isLoading={isLoading} />
     </div>

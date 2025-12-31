@@ -1,9 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import type { StyleListItem } from '../../core';
+import { useSetDefaultStyleMutation, type StyleListItem } from '../../core';
 import { ButtonGroup } from '@/src/components/ui/button-group';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@iconify/react';
 import { Checkbox } from '@/src/components/ui/checkbox';
+import { cn } from '@/src/lib/utils';
 export const columns: ColumnDef<StyleListItem>[] = [
   {
     id: 'select',
@@ -29,33 +30,52 @@ export const columns: ColumnDef<StyleListItem>[] = [
   {
     accessorKey: 'type',
     header: 'Tipo',
+    size: 100,
+    enableResizing: false,
   },
   {
     accessorKey: 'name',
     header: 'Nome',
   },
+
   {
     header: 'Ações',
     size: 100,
     enableResizing: false,
-    cell: ({ row }) => (
-      <div className="flex gap-2">
-        <Button size={'sm'} className="cursor-pointer w-10">
-          <Icon
-            icon={'foundation:check'}
-            color={row.getIsSelected() ? 'green' : undefined}
-            className="transition-all duration-300 ease-in-out"
-          />
-        </Button>
-        <ButtonGroup>
-          <Button size={'sm'} className="cursor-pointer w-10">
-            <Icon icon={'tabler:edit'} />
+    cell: ({ row }) => {
+      const { mutateAsync } = useSetDefaultStyleMutation({ type: row.original.type });
+      return (
+        <div className="flex gap-2">
+          <Button
+            size={'sm'}
+            className={cn(
+              'cursor-pointer w-10 transition-all duration-300 ease-in-out',
+              !row.original.isActive && 'opacity-0 hover:opacity-100',
+            )}
+            variant={'ghost'}
+            onClick={async () => {
+              await mutateAsync({
+                code: row.original.type,
+                styleId: row.original.id,
+              });
+            }}
+          >
+            <Icon
+              icon={'foundation:check'}
+              color={row.original.isActive === true ? 'green' : undefined}
+              className={cn('')}
+            />
           </Button>
-          <Button size={'sm'} className="cursor-pointer w-10" variant={'destructive'}>
-            <Icon icon={'fluent-mdl2:erase-tool'} />
-          </Button>
-        </ButtonGroup>
-      </div>
-    ),
+          <ButtonGroup>
+            <Button size={'sm'} className="cursor-pointer w-10">
+              <Icon icon={'tabler:edit'} />
+            </Button>
+            <Button size={'sm'} className="cursor-pointer w-10" variant={'destructive'}>
+              <Icon icon={'fluent-mdl2:erase-tool'} />
+            </Button>
+          </ButtonGroup>
+        </div>
+      );
+    },
   },
 ];

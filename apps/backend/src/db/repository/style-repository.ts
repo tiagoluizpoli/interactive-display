@@ -1,10 +1,15 @@
 import type { InsertStyle, Style, StyleTarget, Type, UpdateStyle } from '@/models';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '../database-setup';
 import { stylesTable, styleTargetsClassesTable, styleAvailableTargetsTable, activeStylesTable } from '../schema';
 
 export interface getTargetsFilter {
   type?: Type;
+}
+
+export interface GetStyleByName {
+  type: Type;
+  name: string;
 }
 
 export class StyleRepository {
@@ -34,8 +39,13 @@ export class StyleRepository {
     }));
   }
 
-  public async getStyles(): Promise<Style[]> {
-    const styles = await db.query.stylesTable.findMany();
+  public async getStyles(type?: Type): Promise<Style[]> {
+    const styles = await db.query.stylesTable.findMany({
+      where: type ? eq(stylesTable.type, type) : undefined,
+      with: {
+        activeStyles: true,
+      },
+    });
 
     if (!styles.length) return [];
 
@@ -43,6 +53,7 @@ export class StyleRepository {
       id: style.id!,
       name: style.name,
       type: style.type,
+      isActive: !!style.activeStyles.length,
     }));
   }
 
@@ -55,6 +66,7 @@ export class StyleRepository {
             styleTarget: true,
           },
         },
+        activeStyles: true,
       },
     });
 
@@ -66,6 +78,7 @@ export class StyleRepository {
       id: style.id!,
       name: style.name,
       type: style.type,
+      isActive: !!style.activeStyles.length,
       classes: style.classes.map((c) => ({
         target: {
           id: c.styleTargetId,
@@ -77,9 +90,9 @@ export class StyleRepository {
     };
   }
 
-  public async getSyleByName(name: string) {
+  public async getSyleByName({ type, name }: GetStyleByName) {
     const style = await db.query.stylesTable.findFirst({
-      where: eq(stylesTable.name, name),
+      where: and(eq(stylesTable.type, type), eq(stylesTable.name, name)),
     });
 
     if (!style) return;
@@ -127,8 +140,8 @@ export class StyleRepository {
   }
 
   public async deleteStyle(id: string) {
-    await db.delete(styleTargetsClassesTable).where(eq(styleTargetsClassesTable.styleId, id));
-    await db.delete(stylesTable).where(eq(stylesTable.id, id));
+    await db.delete(styleTargetsClassesTable).where(eq(styleTargetsClassesTable.styleId, id)).execute();
+    await db.delete(stylesTable).where(eq(stylesTable.id, id)).execute();
   }
 
   public async setActiveStyle(code: Type, styleId: string) {

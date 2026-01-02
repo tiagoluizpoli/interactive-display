@@ -1,15 +1,17 @@
-GET http://localhost:5000/styles
+GET http://localhost:5000/styles?type=bible
+
+
 
 ###
 
-GET http://localhost:5000/styles/61642482-06d2-42f6-9b7d-dc56ac094b22
+GET http://localhost:5000/styles/ea0efd38-36cb-483f-b834-3e084c4e58aa
 
 ###
 POST http://localhost:5000/styles
 Content-Type: application/json
 
 {
-    "name": "target2",
+    "name": "target3",
     "type": "bible",
     "targets": [
         {
@@ -30,7 +32,7 @@ Content-Type: application/json
     "type": "bible",
     "targets": [
         {
-            "styleId": "22d49ae3-2016-487a-9fe3-5dd230d9790a",
+           
             "targetId": "0d1bd2ae-54d8-400d-adaf-72bbc8152866",
             "classes": "w-full"
         }
@@ -38,7 +40,7 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:5000/styles/034c8456-1315-4aa3-8b01-eaed8f86ac8d
+DELETE http://localhost:5000/styles/be5b0632-4342-4db3-865b-bbf147cf5cd0
 Content-Type: application/json
 
 
@@ -58,5 +60,14 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:5000/styles/target?type=bible
+
+GET http://localhost:5000/styles/active/music
+Content-Type: application/json
+
+
+###
+GET http://localhost:5000/styles/target?type=music
+Content-Type: application/json
+
+###
 

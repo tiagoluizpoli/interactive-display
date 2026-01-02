@@ -26,9 +26,9 @@ export interface StyleDetails extends Style {
 }
 
 export interface InsertStyle extends Omit<Style, 'id'> {
-  targets: Omit<StyleTargetValue, 'id'>[];
+  targets: Omit<StyleTargetValue, 'id' | 'styleId'>[];
 }
 
 export interface UpdateStyle extends Style {
-  targets: Omit<StyleTargetValue, 'id'>[];
+  targets: Omit<StyleTargetValue, 'id' | 'styleId'>[];
 }

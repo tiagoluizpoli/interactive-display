@@ -1,34 +1,38 @@
-import { Button } from '@/src/components/ui/button';
-import { StyleSheet } from './style-sheet';
-
-import { upsertStyleSchema, useCreateStyleMutation, type UpsertStyle, type TargetListItem } from '../../core';
-
+import { useEffect, useState } from 'react';
+import {
+  useUpdateStyleMutation,
+  type UpsertStyle,
+  type TargetListItem,
+  upsertStyleSchema,
+  useGetStyleByIdQuery,
+} from '../../core';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { StyleSheet } from './style-sheet';
+import { Button } from '@/src/components/ui/button';
+
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
-import { Separator } from '@/src/components/ui/separator';
-import { useState } from 'react';
+import { Separator } from '@radix-ui/react-separator';
 
 interface Props {
   type: 'bible' | 'music';
   targets: TargetListItem[];
   triggerButton: React.ReactNode;
+  styleId: string;
 }
 
-export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
+export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props) => {
   const [open, onOpenChange] = useState<boolean>(false);
-  const { mutateAsync } = useCreateStyleMutation({ type });
+  const { mutateAsync } = useUpdateStyleMutation({ type });
+  const { data: style, isLoading } = useGetStyleByIdQuery({ type, styleId });
 
   const defaultValues = {
     type,
     name: '',
-    targets:
-      targets.map((v) => ({
-        targetId: v.id,
-        classes: '',
-      })) ?? [],
+    targets: [],
   };
+
   const form = useForm<UpsertStyle>({
     defaultValues,
     resolver: zodResolver(upsertStyleSchema),
@@ -39,9 +43,23 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
     handleSubmit,
     register,
     reset,
+    setValue,
     control,
     formState: { errors },
   } = form;
+
+  useEffect(() => {
+    if (style) {
+      setValue('name', style.name);
+      setValue(
+        'targets',
+        targets.map((v) => ({
+          targetId: v.id,
+          classes: style?.classes.find((i) => i.target.id === v.id)?.classes ?? '',
+        })) ?? [],
+      );
+    }
+  }, [style]);
 
   const { fields } = useFieldArray({
     control,
@@ -49,24 +67,28 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
   });
 
   const onSubmit = handleSubmit(async (data: UpsertStyle) => {
-    await mutateAsync(data);
+    await mutateAsync({ styleId, newStyle: data });
     reset();
     onOpenChange(false);
   });
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!style) {
+    return <div>No style found.</div>;
+  }
+
   return (
     <StyleSheet
-      title="Criar estilo"
-      description="Crie um novo estilo para ser usado em suas apresentações."
-      trigger={triggerButton}
+      title={`Alterar estilo ${style.name}`}
+      description={`Altere o estilo ${style.name}.`}
       open={open}
       onOpenChange={onOpenChange}
-      footer={
-        <Field orientation={'horizontal'} className="justify-end">
-          <Button type="submit">Salvar estilo</Button>
-        </Field>
-      }
+      footer={<Button type="submit">Salvar estilo</Button>}
       onSubmit={onSubmit}
+      trigger={triggerButton}
     >
       <FieldGroup>
         <FieldSet>
@@ -99,8 +121,6 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
           </FieldGroup>
         </FieldSet>
       </FieldGroup>
-
-      {/* <Controller control={control} name="type" /> */}
     </StyleSheet>
   );
 };

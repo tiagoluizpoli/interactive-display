@@ -1,19 +1,24 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import type { StyleListItem } from '../../core';
+import type { StyleListItem, TargetListItem } from '../../core';
 import { ButtonGroup } from '@/src/components/ui/button-group';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@iconify/react';
 import { Checkbox } from '@/src/components/ui/checkbox';
 import { cn } from '@/src/lib/utils';
+import { UpdateStyleForm } from '../style-form';
 
 interface GetTableColumnsProps {
   setDefaultMutateAsync: (args: { code: string; styleId: string }) => Promise<unknown>;
   deleteMutateAsync: (styleId: string) => Promise<unknown>;
+  type: 'bible' | 'music';
+  targets: TargetListItem[];
 }
 
 export const GetTableColumns = ({
   setDefaultMutateAsync,
   deleteMutateAsync,
+  type,
+  targets,
 }: GetTableColumnsProps): ColumnDef<StyleListItem>[] => {
   const columns: ColumnDef<StyleListItem>[] = [
     {
@@ -69,22 +74,25 @@ export const GetTableColumns = ({
                 });
               }}
             >
-              <Icon
-                icon={'foundation:check'}
-                color={row.original.isActive === true ? 'green' : undefined}
-                className={cn('')}
-              />
+              <Icon icon={'foundation:check'} color={row.original.isActive === true ? 'green' : undefined} />
             </Button>
             <ButtonGroup>
-              <Button size={'sm'} className="cursor-pointer w-10">
-                <Icon icon={'tabler:edit'} />
-              </Button>
+              <UpdateStyleForm
+                triggerButton={
+                  <Button size={'sm'} className="cursor-pointer w-10">
+                    <Icon icon={'tabler:edit'} />
+                  </Button>
+                }
+                type={type}
+                targets={targets}
+                styleId={row.original.id}
+              />
               <Button
                 size={'sm'}
                 className="cursor-pointer w-10"
                 variant={'destructive'}
-                onClick={async () => {
-                  await deleteMutateAsync(row.original.id);
+                onClick={() => {
+                  deleteMutateAsync(row.original.id);
                 }}
               >
                 <Icon icon={'fluent-mdl2:erase-tool'} />

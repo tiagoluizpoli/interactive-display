@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router';
 import { router } from '@/src/routes';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import { ThemeProvider } from './theme-provider';
 import { SidebarProvider } from '../components/ui/sidebar';
@@ -14,6 +15,7 @@ export const Providers = () => {
           <RouterProvider router={router} />
         </SidebarProvider>
       </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
     </QueryClientProvider>
   );
 };

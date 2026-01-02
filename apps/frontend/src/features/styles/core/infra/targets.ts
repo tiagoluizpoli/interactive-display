@@ -1,7 +1,7 @@
 import { httpClient } from '@/src/config/http';
 import type { TargetListItem } from '../models';
 import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from './query-keys';
+import { queryKeys } from '../../../../config/query-keys';
 
 export interface GetTargetsParams {
   type: string;

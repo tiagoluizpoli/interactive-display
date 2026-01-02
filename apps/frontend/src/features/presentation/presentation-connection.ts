@@ -1,4 +1,5 @@
-import { listenTo } from '@/src/config';
+import { listenTo, queryKeys } from '@/src/config';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 interface Presentation {
@@ -35,6 +36,7 @@ export interface CurrentPresentationDto {
 }
 
 export const usePresentationConnection = () => {
+  const queryClient = useQueryClient();
   const [currentPresentation, setCurrentPresentation] = useState<CurrentPresentationDto>({
     displayEnabled: false,
   });
@@ -59,6 +61,13 @@ export const usePresentationConnection = () => {
     listenTo('bible-slide', (data: BibleSlide | null) => {
       console.log('Bible slide data:', data);
       setBibleSlide(data);
+    });
+
+    listenTo('style-updated', (data) => {
+      console.log({ data });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.styles.active(data.code),
+      });
     });
   }, []);
 

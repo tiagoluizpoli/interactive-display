@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { type BibleSlide, type Slide, usePresentationConnection } from './presentation-connection';
+import { mapToBibleStyle, mapToMusicStyle, useGetActiveStyleQuery, type BibleStyle, type MusicStyle } from './core';
 const transitionTime = 0.2;
 
 export const Presentation = () => {
@@ -22,15 +23,32 @@ export const Presentation = () => {
 const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: boolean }) => {
   const lines = slide.text.includes('\n') ? slide.text.split('\n') : [slide.text];
 
+  const { data, isLoading } = useGetActiveStyleQuery('music');
+
+  const defaultMusicStyle: MusicStyle = {
+    name: 'default-music-style',
+    type: 'music',
+    classes: {
+      container: 'w-full p-4 flex justify-center',
+      'text-container': 'w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl',
+      text: 'text-red-500',
+    },
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  const style = data ? mapToMusicStyle(data) : defaultMusicStyle;
+
+  const { classes } = style;
+
   return (
     <MotionWrapper key={`${slide.text}-${displayEnabled}`}>
-      <div id="container" className="w-full p-4 flex justify-center">
-        <div
-          id="text-container"
-          className="w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl"
-        >
+      <div id="container" className={classes.container}>
+        <div id="text-container" className={classes['text-container']}>
           {lines.map((line, index) => (
-            <p id="text" key={index}>
+            <p id="text" className={classes.text} key={index}>
               {line}
             </p>
           ))}
@@ -41,24 +59,44 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
 };
 
 const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
+  const { data, isLoading } = useGetActiveStyleQuery('bible');
+
+  const defaultBibleStyle: BibleStyle = {
+    name: 'default-bible-style',
+    type: 'bible',
+    classes: {
+      container: 'w-full p-4',
+      'inner-container': 'bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl',
+      'reference-container': 'flex justify-end items-start gap-4 pb-4 mb-2',
+      reference: 'w-fit font-bold text-5xl rounded-xl',
+      version: 'text-2xl font-thin text-white',
+      'text-container': 'w-full',
+      text: 'text-5xl text-white',
+    },
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  const style = data ? mapToBibleStyle(data) : defaultBibleStyle;
+
+  const { classes } = style;
+
   return (
     <MotionWrapper key={`${bibleSlide.reference}-${bibleSlide.text}`}>
-      
       <div id="container" className="w-full p-4">
-        <div
-          id="inner-container"
-          className="bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl"
-        >
-          <div id="reference-container" className="flex items-start gap-4 pb-4 mb-2">
-            <span id="reference" className="w-fit font-bold text-5xl text-white rounded-xl">
+        <div id="inner-container" className={classes.container}>
+          <div id="reference-container" className={classes['reference-container']}>
+            <span id="reference" className={classes.reference}>
               {bibleSlide.reference}
             </span>
-            <span id="version" className="text-2xl font-thin text-white">
+            <span id="version" className={classes.version}>
               {bibleSlide.version}
             </span>
           </div>
-          <div id="text-container" className="w-full">
-            <p id="text" className="text-5xl text-white">
+          <div id="text-container" className={classes['text-container']}>
+            <p id="text" className={classes.text}>
               {bibleSlide.text}
             </p>
           </div>

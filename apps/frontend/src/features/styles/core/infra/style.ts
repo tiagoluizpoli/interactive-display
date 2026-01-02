@@ -1,6 +1,6 @@
 import { httpClient } from '@/src/config/http';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from './query-keys';
+import { queryKeys } from '../../../../config/query-keys';
 import type { UpsertStyle, StyleListItem, Style } from '../models';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';

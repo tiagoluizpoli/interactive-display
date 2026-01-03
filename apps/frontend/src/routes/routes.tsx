@@ -6,6 +6,7 @@ export const layoutRouteNames = {
   baseRoute: '/',
   presentation: '/presentation',
   styles: '/styles',
+  config: '/config',
 };
 
 function App() {

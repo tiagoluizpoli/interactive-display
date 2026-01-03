@@ -29,7 +29,7 @@ export const StyleSheet = ({ title, description, children, trigger, open, onOpen
         className="flex flex-col p-0"
         style={{
           maxWidth: 'unset',
-          width: '45rem',
+          width: '75vw',
         }}
       >
         <SheetHeader className="p-4">
@@ -40,7 +40,7 @@ export const StyleSheet = ({ title, description, children, trigger, open, onOpen
         <form onSubmit={onSubmit} className="flex flex-col flex-1 overflow-hidden">
           <ScrollArea className="flex-1 mx-4 grow pr-4">{children}</ScrollArea>
 
-          {footer && <SheetFooter className="p-4 px-8">{footer}</SheetFooter>}
+          {footer && <SheetFooter className="p-4 pe-8">{footer}</SheetFooter>}
         </form>
       </SheetContent>
     </Sheet>

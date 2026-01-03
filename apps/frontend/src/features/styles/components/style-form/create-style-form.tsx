@@ -9,6 +9,8 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet }
 import { Input } from '@/src/components/ui/input';
 import { Separator } from '@/src/components/ui/separator';
 import { useState } from 'react';
+import { BibleViewer } from './bible-viewer';
+import { MusicViewer } from './music-viewer';
 
 interface Props {
   type: 'bible' | 'music';
@@ -39,6 +41,7 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
     handleSubmit,
     register,
     reset,
+    watch,
     control,
     formState: { errors },
   } = form;
@@ -62,9 +65,21 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
       open={open}
       onOpenChange={onOpenChange}
       footer={
-        <Field orientation={'horizontal'} className="justify-end">
-          <Button type="submit">Salvar estilo</Button>
-        </Field>
+        <div className="w-full flex flex-col gap-4">
+          <div className="w-full p-4 border border-dotted rounded-2xl">
+            {type === 'bible' ? (
+              <BibleViewer watch={watch} targets={targets} />
+            ) : (
+              <MusicViewer watch={watch} targets={targets} />
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Salvar estilo e</Button>
+          </div>
+        </div>
+        // <Field orientation={'horizontal'} className="justify-end">
+        //   <Button type="submit">Salvar estilo</Button>
+        // </Field>
       }
       onSubmit={onSubmit}
     >

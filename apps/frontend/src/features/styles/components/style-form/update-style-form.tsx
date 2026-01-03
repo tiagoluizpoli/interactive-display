@@ -14,6 +14,8 @@ import { Button } from '@/src/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
 import { Separator } from '@radix-ui/react-separator';
+import { BibleViewer } from './bible-viewer';
+import { MusicViewer } from './music-viewer';
 
 interface Props {
   type: 'bible' | 'music';
@@ -44,6 +46,7 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
     register,
     reset,
     setValue,
+    watch,
     control,
     formState: { errors },
   } = form;
@@ -86,7 +89,20 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
       description={`Altere o estilo ${style.name}.`}
       open={open}
       onOpenChange={onOpenChange}
-      footer={<Button type="submit">Salvar estilo</Button>}
+      footer={
+        <div className="w-full flex flex-col gap-4">
+          <div className="w-full p-4 border border-dotted rounded-2xl">
+            {type === 'bible' ? (
+              <BibleViewer watch={watch} targets={targets} />
+            ) : (
+              <MusicViewer watch={watch} targets={targets} />
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Salvar estilo e</Button>
+          </div>
+        </div>
+      }
       onSubmit={onSubmit}
       trigger={triggerButton}
     >

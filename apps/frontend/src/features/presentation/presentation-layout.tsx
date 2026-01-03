@@ -79,14 +79,15 @@ const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
     return null;
   }
 
+  // const style = defaultBibleStyle;
   const style = data ? mapToBibleStyle(data) : defaultBibleStyle;
 
   const { classes } = style;
 
   return (
     <MotionWrapper key={`${bibleSlide.reference}-${bibleSlide.text}`}>
-      <div id="container" className="w-full p-4">
-        <div id="inner-container" className={classes.container}>
+      <div id="container" className={classes.container}>
+        <div id="inner-container" className={classes['inner-container']}>
           <div id="reference-container" className={classes['reference-container']}>
             <span id="reference" className={classes.reference}>
               {bibleSlide.reference}

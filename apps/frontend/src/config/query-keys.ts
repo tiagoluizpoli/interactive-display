@@ -13,4 +13,7 @@ export const queryKeys = {
   targets: {
     byType: (params: string | string[]) => buildKey('targets', params),
   },
+  config: {
+    byName: (params: string | string[]) => buildKey('config-by-name', params),
+  },
 };

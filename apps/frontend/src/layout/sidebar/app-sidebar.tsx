@@ -46,6 +46,11 @@ export const AppSidebar = () => {
 
   const configs: MenuItem[] = [
     {
+      icon: 'mdi:cog-outline',
+      title: 'Configurações',
+      to: layoutRouteNames.config,
+    },
+    {
       icon: 'mdi:paint-outline',
       title: 'Estilos',
       to: layoutRouteNames.styles,

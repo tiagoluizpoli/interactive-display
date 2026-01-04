@@ -64,7 +64,7 @@ Content-Type: application/json
 }
 
 ### Get Config by Name
-GET http://localhost:5000/config/propresenter
+GET http://localhost:5000/config/pro-presenter
 
 ### Delete Config property
 DELETE http://localhost:5000/config/holyrics/TIMEOUT

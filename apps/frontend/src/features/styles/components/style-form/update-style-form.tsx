@@ -99,7 +99,7 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
             )}
           </div>
           <div className="flex justify-end">
-            <Button type="submit">Salvar estilo e</Button>
+            <Button type="submit">Salvar estilo</Button>
           </div>
         </div>
       }

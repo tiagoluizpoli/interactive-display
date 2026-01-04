@@ -1,6 +1,7 @@
 import { createBrowserRouter, Outlet } from 'react-router';
 import { Layout } from '../layout';
 import { DashboardView, Presentation, StylesLayout } from '@/src/features';
+import { ConfigView } from '../features/config/config-view';
 
 export const layoutRouteNames = {
   baseRoute: '/',
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
       {
         path: layoutRouteNames.styles,
         element: <StylesLayout />,
+      },
+      {
+        path: layoutRouteNames.config,
+        element: <ConfigView />,
       },
     ],
   },

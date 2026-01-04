@@ -77,9 +77,6 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
             <Button type="submit">Salvar estilo e</Button>
           </div>
         </div>
-        // <Field orientation={'horizontal'} className="justify-end">
-        //   <Button type="submit">Salvar estilo</Button>
-        // </Field>
       }
       onSubmit={onSubmit}
     >

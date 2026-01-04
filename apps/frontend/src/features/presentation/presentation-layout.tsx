@@ -1,11 +1,31 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { type BibleSlide, type Slide, usePresentationConnection } from './presentation-connection';
 import { mapToBibleStyle, mapToMusicStyle, useGetActiveStyleQuery, type BibleStyle, type MusicStyle } from './core';
+import { useEffect } from 'react';
 const transitionTime = 0.2;
 
 export const Presentation = () => {
   const { currentSlide, bibleSlide } = usePresentationConnection();
   const { displayEnabled, currentSlide: slide } = currentSlide;
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.tailwindcss.com';
+    script.onload = () => {
+      (window as any).tailwind.config = {
+        important: '.visible-presentation',
+        corePlugins: {
+          preflight: false,
+        },
+      };
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="w-screen h-screen flex flex-col justify-end motion-preset-fade-lg">
@@ -45,13 +65,15 @@ const MusicView = ({ slide, displayEnabled }: { slide: Slide; displayEnabled: bo
 
   return (
     <MotionWrapper key={`${slide.text}-${displayEnabled}`}>
-      <div id="container" className={classes.container}>
-        <div id="text-container" className={classes['text-container']}>
-          {lines.map((line, index) => (
-            <p id="text" className={classes.text} key={index}>
-              {line}
-            </p>
-          ))}
+      <div className="visible-presentation">
+        <div id="container" className={classes.container}>
+          <div id="text-container" className={classes['text-container']}>
+            {lines.map((line, index) => (
+              <p id="text" className={classes.text} key={index}>
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </MotionWrapper>
@@ -86,20 +108,22 @@ const BibleView = ({ bibleSlide }: { bibleSlide: BibleSlide }) => {
 
   return (
     <MotionWrapper key={`${bibleSlide.reference}-${bibleSlide.text}`}>
-      <div id="container" className={classes.container}>
-        <div id="inner-container" className={classes['inner-container']}>
-          <div id="reference-container" className={classes['reference-container']}>
-            <span id="reference" className={classes.reference}>
-              {bibleSlide.reference}
-            </span>
-            <span id="version" className={classes.version}>
-              {bibleSlide.version}
-            </span>
-          </div>
-          <div id="text-container" className={classes['text-container']}>
-            <p id="text" className={classes.text}>
-              {bibleSlide.text}
-            </p>
+      <div className="visible-presentation">
+        <div id="container" className={classes.container}>
+          <div id="inner-container" className={classes['inner-container']}>
+            <div id="reference-container" className={classes['reference-container']}>
+              <span id="reference" className={classes.reference}>
+                {bibleSlide.reference}
+              </span>
+              <span id="version" className={classes.version}>
+                {bibleSlide.version}
+              </span>
+            </div>
+            <div id="text-container" className={classes['text-container']}>
+              <p id="text" className={classes.text}>
+                {bibleSlide.text}
+              </p>
+            </div>
           </div>
         </div>
       </div>

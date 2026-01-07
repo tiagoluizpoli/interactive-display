@@ -2,9 +2,11 @@ import { Router } from 'express';
 import { io } from '../server';
 import { configRoutes } from './config';
 import { styleRoutes } from './styles';
+import { seedRoutes } from './seed';
 
 export const router = Router();
 
+router.use('/seed', seedRoutes);
 router.use('/config', configRoutes);
 router.use('/styles', styleRoutes);
 

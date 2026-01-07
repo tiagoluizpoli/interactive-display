@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile   
     ports:
-      - "5000:5000"
+      - "0.0.0.0:5000:5000"
     volumes:
       - /app/node_modules
       - /app/apps/backend/node_modules
@@ -17,6 +17,8 @@ services:
     restart: always
     networks:
       - church
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:
@@ -29,7 +31,7 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     ports:
-      - "8090:80"
+      - "0.0.0.0:8090:80"
     volumes:
       - /app/node_modules
       - /app/apps/frontend/node_modules

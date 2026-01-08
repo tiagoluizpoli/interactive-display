@@ -17,13 +17,14 @@ export class MusicPresentation implements IPresentation {
   private slides: Slide[] = [];
   private subscriptions: StreamSubscription[] = [];
 
-  constructor(private readonly proPresenter: ProPresenter) {
+  constructor(public readonly proPresenterService: ProPresenter) {
+    // Exposed as public for config updates
     this.setDisplayEnabled(false);
-    this.proPresenter.onPublicStateChange((state) => this.setDisplayEnabled(state));
+    this.proPresenterService.onPublicStateChange((state) => this.setDisplayEnabled(state));
   }
 
   async execute(): Promise<void> {
-    this.subscriptions.push(await this.proPresenter.onPresentationFocusedChanged(this.setMusic));
+    this.subscriptions.push(await this.proPresenterService.onPresentationFocusedChanged(this.setMusic));
   }
 
   destroy(): void {
@@ -37,7 +38,7 @@ export class MusicPresentation implements IPresentation {
         acc.push(...curr.slides);
         return acc;
       }, []) ?? [];
-    this.subscriptions.push(await this.proPresenter.onPresentationSlideIndexChanged(this.setCurrentSlide));
+    this.subscriptions.push(await this.proPresenterService.onPresentationSlideIndexChanged(this.setCurrentSlide));
   };
 
   private setCurrentSlide = async (params: PresentationSlideIndexParams | null): Promise<void> => {

@@ -24,12 +24,19 @@ export class Orchestrator {
     this.presentations.push(presentation);
   }
 
+  public getPresentation(type: ConfigType): IPresentation | undefined {
+    return this.presentations.find((p) => p.type === type);
+  }
+
   removePresentation(type: ConfigType) {
-    const presentation = this.presentations.find((p) => p.type === type);
-    if (!presentation) {
+    const presentation = this.presentations.filter((p) => p.type === type);
+    if (!presentation.length) {
       return;
     }
-    presentation.destroy();
+    for (const p of presentation) {
+      p.destroy();
+    }
+
     this.presentations = this.presentations.filter((p) => p.type !== type);
   }
 

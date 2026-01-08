@@ -1,1 +1,1 @@
-export * from './config-repository';
+export * from './repository';

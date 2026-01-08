@@ -1,4 +1,5 @@
-import { socket } from '@/src/config';
+import { listenTo, queryKeys } from '@/src/config';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 interface Presentation {
@@ -35,6 +36,7 @@ export interface CurrentPresentationDto {
 }
 
 export const usePresentationConnection = () => {
+  const queryClient = useQueryClient();
   const [currentPresentation, setCurrentPresentation] = useState<CurrentPresentationDto>({
     displayEnabled: false,
   });
@@ -46,19 +48,26 @@ export const usePresentationConnection = () => {
   const [bibleSlide, setBibleSlide] = useState<BibleSlide | null>(null);
 
   useEffect(() => {
-    socket.on('slide', (data: CurrentPresentationDto) => {
+    listenTo('slide', (data: CurrentPresentationDto) => {
       console.log('Slide data:', data);
       setCurrentPresentation(data);
     });
 
-    socket.on('music-slide', (data: CurrentSlideDto) => {
+    listenTo('music-slide', (data: CurrentSlideDto) => {
       console.log('music slide data', data);
       setCurentSlide(data);
     });
 
-    socket.on('bible-slide', (data: BibleSlide | null) => {
-      console.log('bible slide data', data);
+    listenTo('bible-slide', (data: BibleSlide | null) => {
+      console.log('Bible slide data:', data);
       setBibleSlide(data);
+    });
+
+    listenTo('style-updated', (data) => {
+      console.log({ data });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.styles.active(data.code),
+      });
     });
   }, []);
 

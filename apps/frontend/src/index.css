@@ -118,9 +118,9 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html {
+  /* html {
     font-family: "Roboto", serif;
-  }
+  } */
   body {
     @apply bg-background text-foreground;
   }

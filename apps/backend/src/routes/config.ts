@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ConfigRepository } from '../db/config-repository';
+import { ConfigRepository } from '../db';
 import { z } from 'zod';
 
 export const configRoutes = Router();

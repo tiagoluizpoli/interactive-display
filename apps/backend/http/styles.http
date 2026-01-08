@@ -1,0 +1,73 @@
+GET http://localhost:5000/styles?type=bible
+
+
+
+###
+
+GET http://localhost:5000/styles/ea0efd38-36cb-483f-b834-3e084c4e58aa
+
+###
+POST http://localhost:5000/styles
+Content-Type: application/json
+
+{
+    "name": "target3",
+    "type": "bible",
+    "targets": [
+        {
+            "styleId": "22d49ae3-2016-487a-9fe3-5dd230d9790a",
+            "targetId": "0d1bd2ae-54d8-400d-adaf-72bbc8152866",
+            "classes": "w-full"
+        }
+    ]
+}
+
+
+###
+PUT http://localhost:5000/styles/75736f84-3e86-4ac5-a718-743211962b12
+Content-Type: application/json
+
+{
+    "name": "bibliaBolada",
+    "type": "bible",
+    "targets": [
+        {
+           
+            "targetId": "0d1bd2ae-54d8-400d-adaf-72bbc8152866",
+            "classes": "w-full"
+        }
+    ]
+}
+
+###
+DELETE http://localhost:5000/styles/be5b0632-4342-4db3-865b-bbf147cf5cd0
+Content-Type: application/json
+
+
+###
+
+GET http://localhost:5000/styles/active/music
+Content-Type: application/json
+
+###
+
+POST http://localhost:5000/styles/active
+Content-Type: application/json
+
+{
+    "code": "bible",
+    "styleId": "909891e3-e1e0-4204-93de-adbc9129b2e1"
+}
+
+###
+
+GET http://localhost:5000/styles/active/music
+Content-Type: application/json
+
+
+###
+GET http://localhost:5000/styles/target?type=music
+Content-Type: application/json
+
+###
+

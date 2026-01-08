@@ -3,7 +3,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import * as schema from './schema';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { env } from '@/config';
+import { env } from '@/config/env';
 
 const { db: dbConfig } = env;
 

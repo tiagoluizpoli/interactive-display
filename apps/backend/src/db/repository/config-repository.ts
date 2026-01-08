@@ -1,7 +1,7 @@
 import type { ConfigModel, ConfigValueModel } from '@/models';
-import { db } from './database-setup';
-import { configTable, configValuesTable } from './schema';
 import { and, eq, exists, sql } from 'drizzle-orm';
+import { db } from '../database-setup';
+import { configTable, configValuesTable } from '../schema';
 
 export class ConfigRepository {
   private static instance: ConfigRepository;

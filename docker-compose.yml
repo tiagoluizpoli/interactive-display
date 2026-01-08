@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile   
     ports:
-      - "0.0.0.0:5000:5000"
+      - "5000:5000"
     volumes:
       - /app/node_modules
       - /app/apps/backend/node_modules
@@ -15,10 +15,6 @@ services:
     environment:
       - NODE_ENV=development
     restart: always
-    networks:
-      - church
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:
@@ -31,7 +27,7 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     ports:
-      - "0.0.0.0:8090:80"
+      - "8090:80"
     volumes:
       - /app/node_modules
       - /app/apps/frontend/node_modules
@@ -39,17 +35,10 @@ services:
       - apps/frontend/.env
     restart: always
     depends_on:
-      - backend
-    networks:
-      - church
+      - backend    
     deploy:
       resources:
         limits:
           cpus: "0.25"
           memory: "128M"
-          
-networks:
-  church:
-    driver: bridge
-  interactive-display-network:
-    external: true
+  

@@ -12,6 +12,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '../../components/ui/sidebar';
+
+import { useClipboard } from '@mantine/hooks';
 import { layoutRouteNames } from '@/src/routes';
 import { Button } from '@/src/components/ui/button';
 
@@ -36,6 +38,11 @@ interface Group {
 
 export const AppSidebar = () => {
   const { open } = useSidebar();
+
+  const clipboard = useClipboard({
+    timeout: 2000,
+  });
+
   const dashboards: MenuItem[] = [
     {
       title: 'Dashboard',
@@ -121,7 +128,9 @@ export const AppSidebar = () => {
                           <Button
                             onClick={(e) => {
                               e.preventDefault();
-                              navigator.clipboard.writeText(item.copyUrl!.url);
+
+                              clipboard.copy(item.copyUrl?.url);
+
                               toast.info('Link copiado!');
                             }}
                             type="button"

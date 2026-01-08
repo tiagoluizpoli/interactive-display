@@ -1,4 +1,5 @@
-import type { BibleVerse, HolyricsBible } from '@/services';
+import type { BibleVerse } from '@/services'; // Keep BibleVerse, remove HolyricsBible
+import type { Holyrics } from '@/services/holyrics-v2/holyrics'; // Import the new Holyrics class as a type
 import type { IPresentation } from './orchestrator';
 import { io } from '@/server';
 import { createChildLogger } from '../config/logger';
@@ -9,7 +10,7 @@ export class BiblePresentation implements IPresentation {
   private bibleVerse: BibleVerse | null = null;
   private readonly logger = createChildLogger('BiblePresentation');
 
-  constructor(private readonly holyricsBible: HolyricsBible) {}
+  constructor(public readonly holyricsService: Holyrics) {} // Exposed as public for config updates
 
   private setBibleVerse = (bibleVerse?: BibleVerse) => {
     this.bibleVerse = bibleVerse ?? null;
@@ -18,7 +19,7 @@ export class BiblePresentation implements IPresentation {
 
   execute = async (): Promise<void> => {
     this.logger.info('Starting Bible output monitoring');
-    await this.holyricsBible.monitorBibleOutput({ callback: this.setBibleVerse });
+    await this.holyricsService.monitorBibleOutput({ callback: this.setBibleVerse });
   };
   setDisplayEnabled = (displayEnabled: boolean): void => {
     this.logger.warn('setDisplayEnabled not implemented', { displayEnabled });
@@ -36,6 +37,6 @@ export class BiblePresentation implements IPresentation {
 
   destroy(): void {
     this.logger.info('Destroying resources');
-    this.holyricsBible.destroy();
+    this.holyricsService.destroy();
   }
 }

@@ -19,12 +19,7 @@ const { api } = env;
 export const setupExpressApp = (app: Express) => {
   app.use(express.json());
 
-  app.use(
-    cors({
-      origin: api.corsOrigins,
-      allowedHeaders: api.corsAllowedHeaders,
-    }),
-  );
+  app.use(cors());
 
   logOptions[api.logLevel](app);
 };

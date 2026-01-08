@@ -1,8 +1,8 @@
 ### Get All configs
-GET http://localhost:5000/config
+GET http://192.168.0.200:5000/config
 
 ### Create/Update Config
-POST http://localhost:5000/config
+POST http://192.168.0.200:5000/config
 Content-Type: application/json
 
 {
@@ -22,7 +22,7 @@ Content-Type: application/json
 
 
 ### Create/Update Config
-POST http://localhost:5000/config
+POST http://192.168.0.200:5000/config
 Content-Type: application/json
 
 {
@@ -33,16 +33,20 @@ Content-Type: application/json
             "value": "http://192.168.0.200:8092/view/text"
         },
         {
+            "key": "MAX_NETWORK_FAILURES",
+            "value": "5"
+        },
+        {
             "key": "TIMEOUT",
             "value": "30"
         },
         {
             "key": "RETRY_TIME",
-            "value": "3"
+            "value": "1"
         },
         {
             "key": "POLLING_INTERVAL_MS",
-            "value": "100"
+            "value": "300"
         },
         {
             "key": "REFERENCE_SELECTOR",
@@ -60,10 +64,10 @@ Content-Type: application/json
 }
 
 ### Get Config by Name
-GET http://localhost:5000/config/propresenter
+GET http://192.168.0.200:5000/config/pro-presenter
 
 ### Delete Config property
-DELETE http://localhost:5000/config/holyrics/TIMEOUT
+DELETE http://192.168.0.200:5000/config/holyrics/TIMEOUT
 
 ### Delete Config
-DELETE http://localhost:5000/config/propresenter
+DELETE http://192.168.0.200:5000/config/propresenter

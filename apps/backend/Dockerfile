@@ -6,6 +6,7 @@ COPY apps/backend/ ./
 RUN yarn install --frozen-lockfile
 RUN yarn build
 
+
 # Stage 2: Production
 FROM node:22-slim
 WORKDIR /app
@@ -33,7 +34,12 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-RUN yarn db:migrate
+
+COPY --from=builder /app/dist/drizzle.config.js ./drizzle.config.js
+COPY --from=builder /app/src/db/migrations ./src/db/migrations
+
+COPY apps/backend/scripts/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 EXPOSE 5000
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["./entrypoint.sh"]

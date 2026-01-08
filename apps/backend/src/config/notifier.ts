@@ -62,12 +62,21 @@ export class Notifier {
     this.intervalId = setInterval(() => {
       const notificationsToPush = this.notifications.splice(0, this.notifications.length - 1);
 
+      // const reducedNotifications = notificationsToPush.reduce((acc: Record<string, any>, curr) => {
+      //   if (!acc[curr.layer]) {
+      //     acc[curr.layer] = {};
+      //   }
+
+      //   acc[curr.layer][curr.type] = curr.context;
+      //   return acc;
+      // }, {});
+
       const reducedNotifications = notificationsToPush.reduce((acc: Record<string, any>, curr) => {
         if (!acc[curr.layer]) {
-          acc[curr.layer] = {};
+          acc[curr.layer] = [];
         }
+        acc[curr.layer].push(curr);
 
-        acc[curr.layer][curr.type] = curr.context;
         return acc;
       }, {});
 

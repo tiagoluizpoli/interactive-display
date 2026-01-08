@@ -32,7 +32,7 @@ const init = async () => {
 
   setupSocketIoHooks(io, orchestrator);
 
-  const expressServer = server.listen(api.port, () => {
+  const expressServer = server.listen(api.port, '0.0.0.0', () => {
     createChildLogger('Server').info('Server is running', { port: api.port });
   });
 

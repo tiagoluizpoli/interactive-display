@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "822190b1-7eec-4c97-9844-c709da7180c6",
+  "id": "52501684-8377-4b70-80ca-2531472e63e7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "config": {
@@ -89,20 +89,13 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "presentation_styles": {
-      "name": "presentation_styles",
+    "style_available_targets": {
+      "name": "style_available_targets",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
@@ -112,33 +105,49 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "style_targets": {
-      "name": "style_targets",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
-        "style_id": {
-          "name": "style_id",
+        "target": {
+          "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "target": {
-          "name": "target",
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "style_targets_type_target_unique": {
+          "name": "style_targets_type_target_unique",
+          "columns": [
+            "type",
+            "target"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "style_targets_classes": {
+      "name": "style_targets_classes",
+      "columns": {
+        "style_target_id": {
+          "name": "style_target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "style_id": {
+          "name": "style_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -154,10 +163,23 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "style_targets_style_id_presentation_styles_id_fk": {
-          "name": "style_targets_style_id_presentation_styles_id_fk",
-          "tableFrom": "style_targets",
-          "tableTo": "presentation_styles",
+        "style_targets_classes_style_target_id_style_available_targets_id_fk": {
+          "name": "style_targets_classes_style_target_id_style_available_targets_id_fk",
+          "tableFrom": "style_targets_classes",
+          "tableTo": "style_available_targets",
+          "columnsFrom": [
+            "style_target_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "style_targets_classes_style_id_styles_id_fk": {
+          "name": "style_targets_classes_style_id_styles_id_fk",
+          "tableFrom": "style_targets_classes",
+          "tableTo": "styles",
           "columnsFrom": [
             "style_id"
           ],
@@ -168,6 +190,54 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {
+        "style_targets_classes_style_target_id_style_id_pk": {
+          "columns": [
+            "style_target_id",
+            "style_id"
+          ],
+          "name": "style_targets_classes_style_target_id_style_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "styles": {
+      "name": "styles",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "presentation_styles_name_type_unique": {
+          "name": "presentation_styles_name_type_unique",
+          "columns": [
+            "type",
+            "name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

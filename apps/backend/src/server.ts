@@ -30,7 +30,7 @@ export const io = new Server(server, {
 const init = async () => {
   const { orchestrator, notifier } = await makePresentations();
 
-  setupSocketIoHooks(io, orchestrator);
+  setupSocketIoHooks(io);
 
   const expressServer = server.listen(api.port, '0.0.0.0', () => {
     createChildLogger('Server').info('Server is running', { port: api.port });

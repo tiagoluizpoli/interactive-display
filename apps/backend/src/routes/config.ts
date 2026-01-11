@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { ConfigRepository } from '../db';
 import { z } from 'zod';
+import { orchestrator } from '@/presentation-factory';
+import type { ConfigType } from '@/config';
 
 export const configRoutes = Router();
 const configService = ConfigRepository.getInstance();
@@ -36,6 +38,7 @@ configRoutes.post('/', async (req, res) => {
   }
   const { configCode, values } = parsedBody.data;
   await configService.set(configCode, values);
+  await orchestrator.removePresentation(configCode as ConfigType);
   return res.status(200).json({ message: 'Config updated successfully' });
 });
 

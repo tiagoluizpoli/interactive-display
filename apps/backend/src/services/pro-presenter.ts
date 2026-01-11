@@ -62,7 +62,7 @@ export class ProPresenter {
     private params: ProPresenterConfig, // Made non-readonly to allow updateConfig
     private readonly notifier: StatusNotifier,
   ) {
-    const { HOST, PORT } = params;
+    const { HOST, PORT } = this.params;
     this.client = axios.create({
       baseURL: `http://${HOST}:${PORT}`,
     });

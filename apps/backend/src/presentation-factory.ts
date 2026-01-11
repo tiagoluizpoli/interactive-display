@@ -11,14 +11,11 @@ export interface MakePrsentation {
 }
 
 const logger = createChildLogger('makePresentations');
+export const orchestrator = new Orchestrator();
+const configRepository = ConfigRepository.getInstance();
+const notifier = StatusNotifier.getInstance();
 
 export const makePresentations = async () => {
-  const configRepository = ConfigRepository.getInstance();
-
-  const notifier = StatusNotifier.getInstance();
-
-  const orchestrator = new Orchestrator();
-
   logger.debug('starting orchestration');
   setInterval(async () => {
     await orchestrateHolyrics(orchestrator, configRepository, notifier);

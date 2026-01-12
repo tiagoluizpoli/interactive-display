@@ -1,9 +1,10 @@
 services:
   backend:
     container_name: backend
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile   
+    image: tiagoluizpoli/church:backend
+    # build:
+    #   context: .
+    #   dockerfile: apps/backend/Dockerfile   
     ports:
       - "5000:5000"
     volumes:

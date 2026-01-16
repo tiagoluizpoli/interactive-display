@@ -16,18 +16,25 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
     const { timestamp, level, layer, message, ...rest } = info;
     const restKeys = Object.keys(rest);
 
-    return `${timestamp}-${level} [${layer}]: ${JSON.stringify(message)} ${restKeys.length ? `:: ${JSON.stringify(rest)}` : ''}\n`;
+    return `${timestamp} - ${level} [${layer ?? 'root'}]: ${JSON.stringify(message)} ${restKeys.length ? `:: ${JSON.stringify(rest)}` : ''}\n`;
   });
 
   const transports: winston.transport[] = [
     new winston.transports.Console({ format: combine(timestamp(), colorize(), logFormat) }),
   ];
 
+  const store = asyncLocalStorage.getStore();
+
+  const meta: Record<string, any> = { ...defaultMeta };
+  if (store?.traceId) {
+    meta.traceId = store.traceId;
+  }
+
   return winston.createLogger({
     level: env.baseConfig.nodeEnv === 'development' ? 'debug' : 'info',
     format: combine(timestamp(), json()),
     transports,
-    defaultMeta, // Set default metadata for all logs from this logger instance
+    defaultMeta: meta, // Set default metadata for all logs from this logger instance
   });
 };
 

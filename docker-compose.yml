@@ -4,7 +4,7 @@ services:
     image: tiagoluizpoli/church:backend
     # build:
     #   context: .
-    #   dockerfile: apps/backend/Dockerfile   
+    #   dockerfile: apps/backend/Dockerfile
     ports:
       - "5000:5000"
     volumes:

@@ -8,13 +8,12 @@ import { makePresentations } from '@/presentation-factory';
 import { addTraceId, createChildLogger } from './config/logger';
 
 const { api } = env;
-
-const app = express();
-
 const logger = createChildLogger('Server');
 
-setupExpressApp(app);
+const app = express();
 app.use(addTraceId); // Add trace ID middleware
+setupExpressApp(app);
+
 app.use(router);
 
 export const server = createServer(app);
@@ -34,7 +33,7 @@ const init = async () => {
 
   const expressServer = server.listen(api.port, '0.0.0.0', () => {
     orchestrator.emit();
-    createChildLogger('Server').info('Server is running', { port: api.port });
+    logger.info('Server is running', { port: api.port });
   });
 
   process.on('SIGINT', async () => {

@@ -11,6 +11,7 @@ const staticEnvSchema = z.object({
   API_LOG_LEVEL: z.enum(['debug', 'dev', 'prod']).default('prod'),
   DB_SQLITE_PATH: z.string().min(1, 'DB SQLite path is required').endsWith('.db', 'DB SQLite path must end with .db'),
   NOTIFIER_BROADCAST_INTERVAL: z.coerce.number().min(1, 'Notification broadcast interval must be a positive number'),
+  LOGGER_LOKI_URL: z.string().min(1, 'Logger Loki URL is required'),
 });
 
 const parsedStaticEnv = staticEnvSchema.safeParse(process.env);
@@ -36,6 +37,7 @@ const {
   API_LOG_LEVEL,
   DB_SQLITE_PATH,
   NOTIFIER_BROADCAST_INTERVAL,
+  LOGGER_LOKI_URL,
 } = parsedStaticEnv.data;
 
 export const env = {
@@ -48,7 +50,9 @@ export const env = {
     corsAllowedHeaders: setupStringOrStringArrayValue(API_CORS_ALLOWED_HEADERS),
     logLevel: API_LOG_LEVEL,
   },
-  logger: {},
+  logger: {
+    lokiUrl: LOGGER_LOKI_URL,
+  },
   db: {
     sqlitePath: DB_SQLITE_PATH,
   },

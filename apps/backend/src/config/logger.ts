@@ -2,6 +2,7 @@ import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from './env';
+import LokiTransport from 'winston-loki';
 
 const { combine, timestamp, json, colorize } = winston.format;
 
@@ -21,6 +22,16 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
 
   const transports: winston.transport[] = [
     new winston.transports.Console({ format: combine(timestamp(), colorize(), logFormat) }),
+    new LokiTransport({
+      host: env.logger.lokiUrl,
+      json: true,
+      format: json(),
+      useWinstonMetaAsLabels: true,
+      labels: { app: 'interactive-display' },
+      onConnectionError: (err) => {
+        console.error('Loki connection error:', err);
+      },
+    }),
   ];
 
   const store = asyncLocalStorage.getStore();

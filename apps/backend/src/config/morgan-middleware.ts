@@ -20,7 +20,7 @@ export const morganMiddleware = morgan(
   },
   {
     stream: {
-      write: (message) => logger.http(JSON.parse(message)),
+      write: (message) => logger.http('request data', JSON.parse(message)),
     },
   },
 );

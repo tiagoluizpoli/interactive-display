@@ -25,8 +25,8 @@ export const DataTable = <TData, TValue>({ columns, data, isLoading }: DataTable
             return (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header, index) => {
-                  const isFirst = index === 0 ? 'w-12' : undefined;
-                  const isSecound = index === 1 ? 'w-24' : undefined;
+                  const isFirst = index === 0 ? 'w-10 lg:w-12' : undefined;
+                  const isSecound = index === 1 ? 'w-16 lg:w-24' : undefined;
                   const isLast = index === headerGroup.headers.length - 1 ? 'w-[100px] text-center' : undefined;
                   return (
                     <TableHead

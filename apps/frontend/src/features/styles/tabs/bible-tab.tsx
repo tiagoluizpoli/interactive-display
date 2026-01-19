@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { GetTableColumns, CreateStyleForm, DataTable } from '../components';
 import { useDeleteStyleMutation, useGetTargetsQuery, useSetDefaultStyleMutation, useGetStylesQuery } from '../core';
 import { Icon } from '@iconify/react';
+import { useIsMobile } from '@/src/hooks/use-mobile';
 
 export const BibleTab = () => {
   const { data, isLoading } = useGetStylesQuery({ type: 'bible' });
@@ -9,6 +10,8 @@ export const BibleTab = () => {
 
   const { mutateAsync: setDefaultMutateAsync } = useSetDefaultStyleMutation({ type: 'bible' });
   const { mutateAsync: deleteMutateAsync } = useDeleteStyleMutation({ type: 'bible' });
+
+  const isMobile = useIsMobile();
 
   if (targetsIsLoading) {
     return <div>Loading...</div>;
@@ -27,6 +30,7 @@ export const BibleTab = () => {
     deleteMutateAsync,
     type: 'bible',
     targets,
+    isMobile,
   });
   const triggerButton = (
     <Button className="flex items-center cursor-pointer">

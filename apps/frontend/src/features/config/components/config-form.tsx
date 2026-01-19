@@ -73,7 +73,7 @@ export const ConfigForm = ({ code }: Props) => {
   return (
     <form onSubmit={onSubmit}>
       <ScrollArea>
-        <FieldGroup className="grid grid-cols-3">
+        <FieldGroup className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {fields.map((field, index) => (
             <Field key={field.id}>
               <FieldLabel>{field.key}</FieldLabel>

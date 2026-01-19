@@ -5,6 +5,12 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@iconify/react';
 import { Checkbox } from '@/src/components/ui/checkbox';
 import { cn } from '@/src/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/src/components/ui/dropdown-menu';
 import { UpdateStyleForm } from '../style-form';
 
 interface GetTableColumnsProps {
@@ -12,6 +18,7 @@ interface GetTableColumnsProps {
   deleteMutateAsync: (styleId: string) => Promise<unknown>;
   type: 'bible' | 'music';
   targets: TargetListItem[];
+  isMobile: boolean;
 }
 
 export const GetTableColumns = ({
@@ -19,6 +26,7 @@ export const GetTableColumns = ({
   deleteMutateAsync,
   type,
   targets,
+  isMobile,
 }: GetTableColumnsProps): ColumnDef<StyleListItem>[] => {
   const columns: ColumnDef<StyleListItem>[] = [
     {
@@ -58,7 +66,57 @@ export const GetTableColumns = ({
       size: 100,
       enableResizing: false,
       cell: ({ row }) => {
-        return (
+        return isMobile ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <Icon icon="lucide:more-horizontal" className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={async () => {
+                  await setDefaultMutateAsync({
+                    code: row.original.type,
+                    styleId: row.original.id,
+                  });
+                }}
+              >
+                <Icon
+                  icon={'foundation:check'}
+                  color={row.original.isActive === true ? 'green' : undefined}
+                  className="mr-2 h-4 w-4"
+                />
+                Set as Default
+              </DropdownMenuItem>
+              <UpdateStyleForm
+                triggerButton={
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    <Icon icon={'tabler:edit'} className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                }
+                type={type}
+                targets={targets}
+                styleId={row.original.id}
+              />
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600"
+                onClick={() => {
+                  void deleteMutateAsync(row.original.id);
+                }}
+              >
+                <Icon icon={'fluent-mdl2:erase-tool'} className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
           <div className="flex gap-2">
             <Button
               size={'sm'}
@@ -68,7 +126,7 @@ export const GetTableColumns = ({
               )}
               variant={'ghost'}
               onClick={async () => {
-                await setDefaultMutateAsync({
+                void setDefaultMutateAsync({
                   code: row.original.type,
                   styleId: row.original.id,
                 });
@@ -92,7 +150,7 @@ export const GetTableColumns = ({
                 className="cursor-pointer w-10"
                 variant={'destructive'}
                 onClick={() => {
-                  deleteMutateAsync(row.original.id);
+                  void deleteMutateAsync(row.original.id);
                 }}
               >
                 <Icon icon={'fluent-mdl2:erase-tool'} />

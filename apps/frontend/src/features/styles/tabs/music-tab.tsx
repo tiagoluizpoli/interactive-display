@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { GetTableColumns, CreateStyleForm, DataTable } from '../components';
 import { useDeleteStyleMutation, useGetTargetsQuery, useSetDefaultStyleMutation, useGetStylesQuery } from '../core';
 import { Icon } from '@iconify/react';
+import { useIsMobile } from '@/src/hooks/use-mobile';
 
 export const MusicTab = () => {
   const { data, isLoading } = useGetStylesQuery({ type: 'music' });
@@ -9,6 +10,8 @@ export const MusicTab = () => {
 
   const { mutateAsync: setDefaultMutateAsync } = useSetDefaultStyleMutation({ type: 'music' });
   const { mutateAsync: deleteMutateAsync } = useDeleteStyleMutation({ type: 'music' });
+
+  const isMobile = useIsMobile();
 
   if (targetsIsLoading) {
     return <div>Loading...</div>;
@@ -27,6 +30,7 @@ export const MusicTab = () => {
     deleteMutateAsync,
     type: 'music',
     targets,
+    isMobile,
   });
 
   const triggerButton = (

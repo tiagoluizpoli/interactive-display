@@ -59,7 +59,7 @@ export class ProPresenter {
   private client: AxiosInstance;
 
   constructor(
-    private params: ProPresenterConfig, // Made non-readonly to allow updateConfig
+    private params: ProPresenterConfig,
     private readonly notifier: StatusNotifier,
   ) {
     const { HOST, PORT } = this.params;
@@ -77,9 +77,20 @@ export class ProPresenter {
       async (slide: PresentationId) => {
         try {
           const musicResponse = await this.client.get<Music>(`/v1/presentation/${slide.uuid}`);
+          this.logger.info('Presentation Fetched', {
+            action: 'presentation-focused-changed',
+            presentationId: slide.uuid,
+            presentationName: musicResponse.data.presentation.id.name,
+            presentationSlideCount: musicResponse.data.presentation.groups.reduce(
+              (acc, group) => acc + group.slides.length,
+              0,
+            ),
+          });
+
           callback(musicResponse.data);
         } catch (error) {
           this.logger.error('Error fetching presentation details', {
+            action: 'presentation-focused-changed',
             error: (error as Error).message,
           });
 
@@ -92,7 +103,12 @@ export class ProPresenter {
           });
         }
       },
-      () => callback(null),
+      () => {
+        this.logger.info('Presentation cleared', {
+          action: 'presentation-focused-changed',
+        });
+        callback(null);
+      },
     );
   }
 
@@ -102,15 +118,21 @@ export class ProPresenter {
     return this.createStreamSubscription<PresentationSlideIndex>(
       '/v1/presentation/slide_index',
       (slide) => {
-        if (slide.presentation_index) {
+        this.logger.info('Slide index changed', { slideIndex: slide.presentation_index?.index ?? null });
+
+        if (slide.presentation_index?.index !== undefined) {
           return callback({
             slideIndex: slide.presentation_index.index,
             presentationUuid: slide.presentation_index.presentation_id.uuid,
           });
         }
+
         callback(null);
       },
-      () => callback(null),
+      () => {
+        this.logger.info('Slide index cleared');
+        callback(null);
+      },
     );
   }
 
@@ -280,15 +302,13 @@ export class ProPresenter {
     this.retry({ setupStream, callback, stopped: false });
   };
   public updateConfig(newConfig: ProPresenterConfig): void {
-    // Update the local config instance
     this.params = newConfig;
 
-    // Recreate the axios client to reflect the new base URL if HOST or PORT changed
     const { HOST, PORT } = newConfig;
     this.client = axios.create({
       baseURL: `http://${HOST}:${PORT}`,
     });
 
-    this.logger.debug('ProPresenter configuration updated.', { newConfig });
+    this.logger.info('ProPresenter configuration updated.', { action: 'update-config', newConfig });
   }
 }

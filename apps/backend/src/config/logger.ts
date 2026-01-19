@@ -27,7 +27,6 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
       json: true,
       format: json(),
       useWinstonMetaAsLabels: true,
-      labels: { app: 'interactive-display' },
       onConnectionError: (err) => {
         console.error('Loki connection error:', err);
       },
@@ -36,7 +35,8 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
 
   const store = asyncLocalStorage.getStore();
 
-  const meta: Record<string, any> = { ...defaultMeta };
+  const meta: Record<string, any> = { ...defaultMeta, service_name: 'interactive-display' };
+
   if (store?.traceId) {
     meta.traceId = store.traceId;
   }

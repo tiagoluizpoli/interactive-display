@@ -23,6 +23,14 @@ Este projeto consiste em uma aplicação "Interactive Display" desenvolvida para
     - [Reiniciando a Aplicação](#reiniciando-a-aplicação)
     - [Atualizando a Aplicação](#atualizando-a-aplicação)
   - [Solução de Problemas Comuns](#solução-de-problemas-comuns)
+  - [Desenvolvimento (Build Manual)](#desenvolvimento-build-manual)
+    - [Build do Backend](#build-do-backend)
+      - [Pré-requisitos](#pré-requisitos-1)
+      - [Passos para o Build da aplicação](#passos-para-o-build-da-aplicação)
+      - [Passos para o build da imagem docker](#passos-para-o-build-da-imagem-docker)
+    - [Build do Frontend](#build-do-frontend)
+      - [Pré-requisitos](#pré-requisitos-2)
+      - [Passos para o build do frontend](#passos-para-o-build-do-frontend)
 
 ## Visão Geral do Projeto
 
@@ -50,10 +58,19 @@ A estrutura de pastas principal é a seguinte:
 
 Ambos os serviços, `backend` e `frontend`, utilizam arquivos de variáveis de ambiente. Você encontrará templates nos seguintes locais:
 
+- `.env.template`
 - `apps/backend/.env.template`
 - `apps/frontend/.env.template`
 
 Para configurar o ambiente, copie esses arquivos e renomeie-os para `.env` (sem o `.template`) em suas respectivas pastas.
+
+Exemplo para a raíz do projeto
+
+```bash
+cp .env.template .env
+```
+
+Edite o arquivo `.env` com a tag do backend que deseja instalar.
 
 Exemplo para o backend:
 
@@ -223,3 +240,62 @@ Se houver novas versões do código-fonte ou alterações nos Dockerfiles:
     -   Confira o console do navegador por erros (F12).
 -   **Problemas com as variáveis de ambiente:** Verifique se os arquivos `.env` estão corretos e nas pastas esperadas. Lembre-se de reconstruir os contêineres se você alterou as variáveis de ambiente após o build inicial (`docker compose up --build -d`).
 -   **Problemas de conectividade entre serviços:** Verifique as redes definidas no `docker-compose.yml` e se os nomes dos serviços estão sendo resolvidos corretamente (geralmente `backend` e `frontend` são os nomes dos serviços).
+
+## Desenvolvimento (Build Manual)
+### Build do Backend
+
+#### Pré-requisitos
+- Aplicação
+  - Ter o node em uma versão lts instalado (`20 ou superior`)
+  - Ter o yarn instalado globalmente (`npm install -g yarn`)
+- Docker
+  - Ter o docker instalado (`Docker Desktop` ou apenas o `Docker Engine`)
+  - estar autenticado no DockerHub (Em caso de push de imagem)
+
+#### Passos para o Build da aplicação
+
+No diretório raíz da aplicação execute o comando
+```bash
+yarn build:back
+```
+Após a conclusão os arquivos de build estarão no caminho ./apps/backend/dist
+
+#### Passos para o build da imagem docker
+
+Para construir a imagem Docker do backend manualmente execute o comando
+```bash
+docker build -f .\apps\backend\Dockerfile . -t church-backend
+``` 
+
+Após a finalização do build, execute o comando a seguir para dar uma tag para a imagem
+```bash
+docker tag church-backend:latest tiagoluizpoli/church-backend:[tag]
+```
+
+Após a criação da tag, execute o comando a seguir para realizar o push da imagem
+```bash
+docker push tiagoluizpoli/church-backend:[tag]
+```
+
+> <b>Importante</b>
+> - Substitua `[tag]` pela tag a ser utilizada
+> - A tag deve ser composta pelo padrão [Semantic Versioning (SemVer)](https://semver.org/)
+
+
+### Build do Frontend
+
+#### Pré-requisitos
+- Ter o node em uma versão lts instalado (`20 ou superior`)
+- Ter o yarn instalado globalmente (`npm install -g yarn`)
+
+#### Passos para o build do frontend
+
+Para realizar o build do frontend primeiro execute o comando abaixo para instalar as dependências da aplicação
+```bash
+yarn install:front
+```
+
+Após a conclusão execute o comando abaixo para realizar o build dos arquivos estáticos da aplicação
+```bash
+yarn build:front
+```

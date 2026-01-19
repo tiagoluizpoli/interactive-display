@@ -2,12 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src
 import { useDashboardSocketConnection } from './use-dashboard-socket-connection';
 import { Badge } from '@/src/components/ui/badge';
 import { Icon } from '@iconify/react';
+import { usePresentationConnection } from '../presentation/presentation-connection';
 
 export const DashboardView = () => {
   const { holyricsNotifications, proPresenterNotifications } = useDashboardSocketConnection();
+  const { bibleSlide, currentSlide } = usePresentationConnection();
 
   return (
-    <div className="gap-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+    <div className="gap-4 grid grid-cols-1 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -29,12 +31,19 @@ export const DashboardView = () => {
           <CardDescription>Status do Holyrics</CardDescription>
         </CardHeader>
         <CardContent>
-          {holyricsNotifications.logs.length > 0 && (
-            <p>
-              Última atualização:
-              {holyricsNotifications.logs[holyricsNotifications.logs.length - 1]?.timestamp?.toLocaleString()}
-            </p>
-          )}
+          <div className="flex flex-col gap-1">
+            {bibleSlide === null ? (
+              <p className="font-bold text-xl">Não há um versículo sendo exibido</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="w-full flex justify-end gap-1">
+                  <p className="font-bold">{bibleSlide.reference}</p>
+                  <p className="text-xs">{bibleSlide.version}</p>
+                </div>
+                <p className="font-thin">{bibleSlide.text}</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
       <Card>
@@ -58,11 +67,10 @@ export const DashboardView = () => {
           <CardDescription>Status do Pro Presenter</CardDescription>
         </CardHeader>
         <CardContent>
-          {proPresenterNotifications.logs.length > 0 && (
-            <p>
-              Última atualização:
-              {proPresenterNotifications.logs[proPresenterNotifications.logs.length - 1]?.timestamp?.toLocaleString()}
-            </p>
+          {currentSlide.currentSlide?.text ? (
+            <p className="font-thin">{currentSlide.currentSlide?.text}</p>
+          ) : (
+            <p className="font-bold text-xl">Não há um trecho de música sendo exibido</p>
           )}
         </CardContent>
       </Card>

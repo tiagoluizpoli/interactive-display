@@ -1,7 +1,7 @@
 services:
   backend:
     container_name: backend
-    image: tiagoluizpoli/church:backend
+    image: tiagoluizpoli/church-backend:${DOCKER_BACKEND_TAG}
     # build:
     #   context: .
     #   dockerfile: apps/backend/Dockerfile

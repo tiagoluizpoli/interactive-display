@@ -269,8 +269,7 @@ docker build -f ./apps/backend/Dockerfile . -t tiagoluizpoli/church-backend:late
 
 Após o build da imagem, execute os comandos a seguir para realizar o push da imagem
 ```bash
-docker push tiagoluizpoli/church-backend:latest \
-docker push tiagoluizpoli/church-backend:[tag]
+docker push tiagoluizpoli/church-backend:latest && docker push tiagoluizpoli/church-backend:[tag]
 ```
 
 > <b>Importante</b>

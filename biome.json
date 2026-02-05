@@ -11,15 +11,29 @@
   },
   "formatter": {
     "enabled": true,
-    "lineWidth": 120,
+    "lineWidth": 80,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineEnding": "lf",
-    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", ".favorites.json", ".vscode/"]
+    "ignore": [
+      "node_modules/",
+      "dist/",
+      "terraform/",
+      ".turbo/",
+      ".favorites.json",
+      ".vscode/"
+    ]
   },
   "organizeImports": {
     "enabled": true,
-    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", "turbo", ".vscode/"]
+    "ignore": [
+      "node_modules/",
+      "dist/",
+      "terraform/",
+      ".turbo/",
+      "turbo",
+      ".vscode/"
+    ]
   },
   "linter": {
     "enabled": true,
@@ -35,7 +49,9 @@
           "options": {
             "strictCase": true,
             "requireAscii": true,
-            "filenameCases": ["kebab-case"]
+            "filenameCases": [
+              "kebab-case"
+            ]
           }
         }
       },
@@ -54,7 +70,14 @@
         "noForEach": "off"
       }
     },
-    "ignore": ["node_modules/", "dist/", "terraform/", ".turbo/", "turbo", ".vscode/"]
+    "ignore": [
+      "node_modules/",
+      "dist/",
+      "terraform/",
+      ".turbo/",
+      "turbo",
+      ".vscode/"
+    ]
   },
   "javascript": {
     "parser": {

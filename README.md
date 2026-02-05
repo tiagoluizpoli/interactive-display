@@ -264,17 +264,12 @@ Após a conclusão os arquivos de build estarão no caminho ./apps/backend/dist
 
 Para construir a imagem Docker do backend manualmente execute o comando
 ```bash
-docker build -f .\apps\backend\Dockerfile . -t church-backend
+docker build -f ./apps/backend/Dockerfile . -t tiagoluizpoli/church-backend:latest -t tiagoluizpoli/church-backend:[tag]
 ``` 
 
-Após a finalização do build, execute o comando a seguir para dar uma tag para a imagem
+Após o build da imagem, execute os comandos a seguir para realizar o push da imagem
 ```bash
-docker tag church-backend:latest tiagoluizpoli/church-backend:[tag]
-```
-
-Após a criação da tag, execute o comando a seguir para realizar o push da imagem
-```bash
-docker push tiagoluizpoli/church-backend:[tag]
+docker push tiagoluizpoli/church-backend:latest && docker push tiagoluizpoli/church-backend:[tag]
 ```
 
 > <b>Importante</b>

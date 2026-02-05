@@ -4,20 +4,33 @@ import { z } from 'zod';
 config();
 
 const staticEnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   API_PORT: z.coerce.number().min(1, 'API port must be a positive number'),
   API_CORS_ORIGINS: z.string().min(1, 'API CORS origins are required'),
-  API_CORS_ALLOWED_HEADERS: z.string().min(1, 'API CORS allowed headers are required'),
+  API_CORS_ALLOWED_HEADERS: z
+    .string()
+    .min(1, 'API CORS allowed headers are required'),
   API_LOG_LEVEL: z.enum(['debug', 'dev', 'prod']).default('prod'),
-  DB_SQLITE_PATH: z.string().min(1, 'DB SQLite path is required').endsWith('.db', 'DB SQLite path must end with .db'),
-  NOTIFIER_BROADCAST_INTERVAL: z.coerce.number().min(1, 'Notification broadcast interval must be a positive number'),
-  LOGGER_LOKI_URL: z.string().min(1, 'Logger Loki URL is required'),
+  DB_SQLITE_PATH: z
+    .string()
+    .min(1, 'DB SQLite path is required')
+    .endsWith('.db', 'DB SQLite path must end with .db'),
+  NOTIFIER_BROADCAST_INTERVAL: z.coerce
+    .number()
+    .min(1, 'Notification broadcast interval must be a positive number'),
+  LOGGER_LOKI_URL: z.string().url().optional(),
+  LOGGER_LOKI_BASIC_AUTH: z.string().optional(),
 });
 
 const parsedStaticEnv = staticEnvSchema.safeParse(process.env);
 
 if (!parsedStaticEnv.success) {
-  console.error('Invalid static environment variables:', parsedStaticEnv.error.format());
+  console.error(
+    'Invalid static environment variables:',
+    parsedStaticEnv.error.format(),
+  );
   throw new Error('Invalid static environment variables');
 }
 
@@ -38,6 +51,7 @@ const {
   DB_SQLITE_PATH,
   NOTIFIER_BROADCAST_INTERVAL,
   LOGGER_LOKI_URL,
+  LOGGER_LOKI_BASIC_AUTH,
 } = parsedStaticEnv.data;
 
 export const env = {
@@ -52,6 +66,7 @@ export const env = {
   },
   logger: {
     lokiUrl: LOGGER_LOKI_URL,
+    lokiBasicAuth: LOGGER_LOKI_BASIC_AUTH,
   },
   db: {
     sqlitePath: DB_SQLITE_PATH,

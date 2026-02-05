@@ -21,21 +21,32 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
   });
 
   const transports: winston.transport[] = [
-    new winston.transports.Console({ format: combine(timestamp(), colorize(), logFormat) }),
-    new LokiTransport({
-      host: env.logger.lokiUrl,
-      json: true,
-      format: json(),
-      useWinstonMetaAsLabels: true,
-      onConnectionError: (err) => {
-        console.error('Loki connection error:', err);
-      },
+    new winston.transports.Console({
+      format: combine(timestamp(), colorize(), logFormat),
     }),
   ];
 
+  if (env.logger.lokiUrl) {
+    transports.push(
+      new LokiTransport({
+        host: env.logger.lokiUrl,
+        basicAuth: env.logger.lokiBasicAuth,
+        json: true,
+        format: json(),
+        useWinstonMetaAsLabels: true,
+        onConnectionError: (err) => {
+          console.error('LOGGER :: LOKI :: Connection error:', err);
+        },
+      }),
+    );
+  }
+
   const store = asyncLocalStorage.getStore();
 
-  const meta: Record<string, any> = { ...defaultMeta, service_name: 'interactive-display' };
+  const meta: Record<string, any> = {
+    ...defaultMeta,
+    service_name: 'interactive-display',
+  };
 
   if (store?.traceId) {
     meta.traceId = store.traceId;
@@ -52,7 +63,10 @@ const createLogger = (defaultMeta?: Record<string, any>) => {
 export const logger = createLogger(); // Default logger without specific context
 
 // Function to create a child logger with specific context
-export const createChildLogger = (layer: string, defaultMeta?: Record<string, any>) => {
+export const createChildLogger = (
+  layer: string,
+  defaultMeta?: Record<string, any>,
+) => {
   const store = asyncLocalStorage.getStore();
   const meta: Record<string, any> = { layer, ...defaultMeta };
   if (store?.traceId) {

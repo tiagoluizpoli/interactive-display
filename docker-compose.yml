@@ -1,7 +1,8 @@
 services:
   backend:
     container_name: backend
-    image: tiagoluizpoli/church-backend:${DOCKER_BACKEND_TAG}
+    image: tiagoluizpoli/church-backend:${DOCKER_BACKEND_TAG:-latest}
+    pull_policy: always
     # build:
     #   context: .
     #   dockerfile: apps/backend/Dockerfile

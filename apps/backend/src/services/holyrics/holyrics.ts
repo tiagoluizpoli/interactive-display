@@ -1,10 +1,19 @@
-import type { HolyricsServiceConfig, StatusNotifier, BibleVerse } from './types';
+import type {
+  HolyricsServiceConfig,
+  StatusNotifier,
+  BibleVerse,
+} from './types';
 import { createChildLogger } from '@/config/logger';
 import { BrowserManager } from './browser-manager';
 import type { HTTPRequest } from 'puppeteer';
 import { MAX_DOM_READ_FAILURES } from './constants';
 
-const connectionStateOptions = ['STOPPED', 'DISCONNECTED', 'CONNECTING', 'CONNECTED'] as const;
+const connectionStateOptions = [
+  'STOPPED',
+  'DISCONNECTED',
+  'CONNECTING',
+  'CONNECTED',
+] as const;
 type ConnectionState = (typeof connectionStateOptions)[number];
 
 /**
@@ -31,7 +40,8 @@ export class Holyrics {
     this.logger = createChildLogger('Holyrics');
     this.browserManager = new BrowserManager({
       headless: true, // Always headless for server environments
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+      executablePath:
+        process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -41,14 +51,16 @@ export class Holyrics {
         '--single-process',
       ],
       defaultNavigationTimeoutMs: config.TIMEOUT * 1000,
-      loggerName: 'Holyrics:BrowserManager',
+      loggerName: 'Holyrics',
     });
   }
 
   private setConnectionState(newState: ConnectionState) {
     if (this.connectionState === newState) return;
 
-    this.logger.debug(`Connection state transition: ${this.connectionState} -> ${newState}`);
+    this.logger.debug(
+      `Connection state transition: ${this.connectionState} -> ${newState}`,
+    );
     this.connectionState = newState;
   }
 
@@ -74,14 +86,19 @@ export class Holyrics {
             this.notifier.setStatus({
               subject: 'holyrics',
               items: { active: true },
-              logs: this.networkFailureCount > 0 ? [{ message: 'Connection restored' }] : [],
+              logs:
+                this.networkFailureCount > 0
+                  ? [{ message: 'Connection restored' }]
+                  : [],
             });
 
             this.networkFailureCount = 0;
           }
         });
 
-        this.logger.debug('Puppeteer request interception enabled and listeners attached.');
+        this.logger.debug(
+          'Puppeteer request interception enabled and listeners attached.',
+        );
       });
       this.setConnectionState('CONNECTED');
       this.networkFailureCount = 0;
@@ -149,7 +166,9 @@ export class Holyrics {
       }
 
       if (this.connectionState === 'CONNECTING') {
-        this.logger.debug('Connection already in progress. Skipping new attempt.');
+        this.logger.debug(
+          'Connection already in progress. Skipping new attempt.',
+        );
         return;
       }
 
@@ -162,22 +181,27 @@ export class Holyrics {
 
     if (
       failure &&
-      (failure.errorText.includes('ERR_CONNECTION_REFUSED') || failure.errorText.includes('canceled')) &&
+      (failure.errorText.includes('ERR_CONNECTION_REFUSED') ||
+        failure.errorText.includes('canceled')) &&
       request.url().includes(this.config.URL) &&
       this.browserManager.isPageOpen()
     ) {
       this.networkFailureCount++;
-      this.logger.warn(`Network request failed: ${request.url()} - ${failure.errorText}`, {
-        currentFailures: this.networkFailureCount,
-        maxFailures: this.config.MAX_NETWORK_FAILURES,
-      });
+      this.logger.warn(
+        `Network request failed: ${request.url()} - ${failure.errorText}`,
+        {
+          currentFailures: this.networkFailureCount,
+          maxFailures: this.config.MAX_NETWORK_FAILURES,
+        },
+      );
 
       this.notifier.setStatus({
         subject: 'holyrics',
         items: { active: false },
         logs: [
           {
-            message: 'Holyrics connection issue detected. Attempting to recover...',
+            message:
+              'Holyrics connection issue detected. Attempting to recover...',
             context: {
               url: this.config.URL,
               failureCount: this.networkFailureCount,
@@ -198,17 +222,26 @@ export class Holyrics {
 
   private startPolling = async ({
     callback,
-  }: { callback: (bibleVerse: BibleVerse | undefined) => void }): Promise<void> => {
+  }: {
+    callback: (bibleVerse: BibleVerse | undefined) => void;
+  }): Promise<void> => {
     if (this.intervalId) {
       clearInterval(this.intervalId);
-      this.logger.debug('Previous polling interval cleared before setting a new one.');
+      this.logger.debug(
+        'Previous polling interval cleared before setting a new one.',
+      );
     }
 
     this.intervalId = setInterval(async () => {
-      if (this.connectionState !== 'CONNECTED' || this.networkFailureCount > 0) {
+      if (
+        this.connectionState !== 'CONNECTED' ||
+        this.networkFailureCount > 0
+      ) {
         this.previousBibleVerse = undefined;
         callback(undefined);
-        this.logger.info('Cleared previous Bible verse due to network issues or non-CONNECTED state.');
+        this.logger.info(
+          'Cleared previous Bible verse due to network issues or non-CONNECTED state.',
+        );
 
         this.logger.debug('Polling skipped: not in CONNECTED state.', {
           connectionState: this.connectionState,
@@ -219,14 +252,25 @@ export class Holyrics {
       this.browserManager.evaluate(async (page) => {
         try {
           const currentBibleVerse = await page.evaluate(
-            (referenceSelector: string, textSelector: string, versionSelector: string) => {
-              const referenceHtmlObject = document.querySelector(referenceSelector);
+            (
+              referenceSelector: string,
+              textSelector: string,
+              versionSelector: string,
+            ) => {
+              const referenceHtmlObject =
+                document.querySelector(referenceSelector);
               const textHtmlObject = document.querySelector(textSelector);
               const versionHtmlObject = document.querySelector(versionSelector);
 
-              const reference = referenceHtmlObject?.textContent?.trim().replace(/\s\s+/g, ' ');
-              const text = textHtmlObject?.textContent?.trim().replace(/\s\s+/g, ' ');
-              const version = versionHtmlObject?.textContent?.trim().replace(/\s\s+/g, ' ');
+              const reference = referenceHtmlObject?.textContent
+                ?.trim()
+                .replace(/\s\s+/g, ' ');
+              const text = textHtmlObject?.textContent
+                ?.trim()
+                .replace(/\s\s+/g, ' ');
+              const version = versionHtmlObject?.textContent
+                ?.trim()
+                .replace(/\s\s+/g, ' ');
 
               if (
                 !reference ||
@@ -254,7 +298,9 @@ export class Holyrics {
             if (this.previousBibleVerse) {
               this.previousBibleVerse = undefined;
               callback(undefined);
-              this.logger.info('Cleared previous Bible verse due to network issues or non-CONNECTED state.');
+              this.logger.info(
+                'Cleared previous Bible verse due to network issues or non-CONNECTED state.',
+              );
             }
             return;
           }
@@ -278,7 +324,9 @@ export class Holyrics {
 
           this.previousBibleVerse = currentBibleVerse;
           callback(currentBibleVerse);
-          this.logger.debug('New Bible verse detected and callback invoked.', { verse: currentBibleVerse.reference });
+          this.logger.debug('New Bible verse detected and callback invoked.', {
+            verse: currentBibleVerse.reference,
+          });
         } catch (error) {
           this.domReadFailureCount++; // Increment on DOM read failure
           const errorMessage = (error as Error).message.split('\n')[0];
@@ -293,15 +341,21 @@ export class Holyrics {
             items: { active: false },
             logs: [
               {
-                message: 'Failed to read DOM during polling. Attempting recovery.',
-                context: { errorMessage, currentDomReadFailures: this.domReadFailureCount },
+                message:
+                  'Failed to read DOM during polling. Attempting recovery.',
+                context: {
+                  errorMessage,
+                  currentDomReadFailures: this.domReadFailureCount,
+                },
               },
             ],
           });
 
           // Trigger full reconnection only if DOM read failures exceed threshold and not already reconnecting
           if (this.domReadFailureCount >= MAX_DOM_READ_FAILURES) {
-            this.logger.warn(`Max DOM read failures (${MAX_DOM_READ_FAILURES}) reached. Triggering full reconnection.`);
+            this.logger.warn(
+              `Max DOM read failures (${MAX_DOM_READ_FAILURES}) reached. Triggering full reconnection.`,
+            );
             this.disconnect();
           }
         }

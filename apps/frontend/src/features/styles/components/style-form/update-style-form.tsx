@@ -11,11 +11,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { StyleSheet } from './style-sheet';
 import { Button } from '@/src/components/ui/button';
 
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/src/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
 import { Separator } from '@radix-ui/react-separator';
 import { BibleViewer } from './bible-viewer';
 import { MusicViewer } from './music-viewer';
+import { Textarea } from '@/src/components/ui/textarea';
 
 interface Props {
   type: 'bible' | 'music';
@@ -24,7 +32,12 @@ interface Props {
   styleId: string;
 }
 
-export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props) => {
+export const UpdateStyleForm = ({
+  type,
+  targets,
+  triggerButton,
+  styleId,
+}: Props) => {
   const [open, onOpenChange] = useState<boolean>(false);
   const { mutateAsync } = useUpdateStyleMutation({ type });
   const { data: style, isLoading } = useGetStyleByIdQuery({ type, styleId });
@@ -38,18 +51,10 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
   const form = useForm<UpsertStyle>({
     defaultValues,
     resolver: zodResolver(upsertStyleSchema),
-    mode: 'onTouched',
+    mode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    register,
-    reset,
-    setValue,
-    watch,
-    control,
-    formState: { errors },
-  } = form;
+  const { handleSubmit, reset, setValue, watch, control } = form;
 
   useEffect(() => {
     if (style) {
@@ -58,7 +63,8 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
         'targets',
         targets.map((v) => ({
           targetId: v.id,
-          classes: style?.classes.find((i) => i.target.id === v.id)?.classes ?? '',
+          classes:
+            style?.classes.find((i) => i.target.id === v.id)?.classes ?? '',
         })) ?? [],
       );
     }
@@ -112,10 +118,14 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
             control={control}
             name="name"
             render={({ field, fieldState }) => (
-              <Field>
-                <FieldLabel>Nome</FieldLabel>
-                <Input {...field} />
-                <FieldError errors={[fieldState.error]} />
+              <Field aria-invalid={fieldState.invalid}>
+                <FieldLabel aria-invalid={fieldState.invalid}>Nome</FieldLabel>
+                <Input {...field} aria-invalid={fieldState.invalid} />
+                {fieldState.invalid ? (
+                  <FieldError>{fieldState.error?.message}</FieldError>
+                ) : (
+                  <FieldDescription>Nome do estilo</FieldDescription>
+                )}
               </Field>
             )}
           />
@@ -125,14 +135,45 @@ export const UpdateStyleForm = ({ type, targets, triggerButton, styleId }: Props
 
         <FieldSet>
           <FieldLabel>Classes</FieldLabel>
-          <FieldDescription>Preencha cada propriedade com as classes do tailwind</FieldDescription>
-          <FieldGroup>
-            {fields.map((field, index) => (
-              <Field key={field.id}>
-                <FieldLabel>{targets.find((i) => i.id === field.targetId)?.target}</FieldLabel>
-                <Input {...register(`targets.${index}.classes`)} />
-                <FieldError errors={[errors.targets?.[index]?.classes]} />
-              </Field>
+          <FieldDescription>
+            Preencha cada propriedade com as classes do tailwind
+          </FieldDescription>
+          <FieldGroup className="grid grid-cols-3 gap-8">
+            {fields.map((fieldItem, index) => (
+              <Controller
+                key={fieldItem.id}
+                control={control}
+                name={`targets.${index}.classes`}
+                render={({ field, fieldState }) => {
+                  return (
+                    <Field aria-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        {
+                          targets.find((i) => i.id === fieldItem.targetId)
+                            ?.target
+                        }
+                      </FieldLabel>
+                      <Textarea
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                        className="resize-none h-24"
+                      />
+
+                      {fieldState.invalid ? (
+                        <FieldError>{fieldState.error?.message}</FieldError>
+                      ) : (
+                        <FieldDescription>
+                          {
+                            targets.find((i) => i.id === fieldItem.targetId)
+                              ?.description
+                          }
+                        </FieldDescription>
+                      )}
+                    </Field>
+                  );
+                }}
+              />
             ))}
           </FieldGroup>
         </FieldSet>

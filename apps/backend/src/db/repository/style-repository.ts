@@ -1,7 +1,18 @@
-import type { InsertStyle, Style, StyleTarget, Type, UpdateStyle } from '@/models';
+import type {
+  InsertStyle,
+  Style,
+  StyleTarget,
+  Type,
+  UpdateStyle,
+} from '@/models';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../database-setup';
-import { stylesTable, styleTargetsClassesTable, styleAvailableTargetsTable, activeStylesTable } from '../schema';
+import {
+  stylesTable,
+  styleTargetsClassesTable,
+  styleAvailableTargetsTable,
+  activeStylesTable,
+} from '../schema';
 
 export interface getTargetsFilter {
   type?: Type;
@@ -26,7 +37,10 @@ export class StyleRepository {
 
   public async getTargets(filter?: getTargetsFilter): Promise<StyleTarget[]> {
     const targets = await db.query.styleAvailableTargetsTable.findMany({
-      where: filter?.type ? eq(styleAvailableTargetsTable.type, filter.type) : undefined,
+      where: filter?.type
+        ? eq(styleAvailableTargetsTable.type, filter.type)
+        : undefined,
+      orderBy: (tbl, { asc }) => [asc(tbl.order)],
     });
 
     if (!targets.length) return [];
@@ -35,6 +49,7 @@ export class StyleRepository {
       id: target.id!,
       type: target.type,
       target: target.target,
+      order: target.order,
       description: target.description ?? undefined,
     }));
   }
@@ -79,14 +94,17 @@ export class StyleRepository {
       name: style.name,
       type: style.type,
       isActive: !!style.activeStyles.length,
-      classes: style.classes.map((c) => ({
-        target: {
-          id: c.styleTargetId,
-          name: c.styleTarget.target,
-          description: c.styleTarget.description ?? undefined,
-        },
-        classes: c.classes,
-      })),
+      classes: style.classes
+        .sort((a, b) => a.styleTarget.order - b.styleTarget.order)
+        .map((c) => ({
+          target: {
+            id: c.styleTargetId,
+            name: c.styleTarget.target,
+            order: c.styleTarget.order,
+            description: c.styleTarget.description ?? undefined,
+          },
+          classes: c.classes,
+        })),
     };
   }
 
@@ -105,7 +123,10 @@ export class StyleRepository {
   }
 
   public async insertStyle(style: InsertStyle) {
-    const [styleResult] = await db.insert(stylesTable).values({ type: style.type, name: style.name }).returning();
+    const [styleResult] = await db
+      .insert(stylesTable)
+      .values({ type: style.type, name: style.name })
+      .returning();
 
     await db.insert(styleTargetsClassesTable).values(
       style.targets.map((target) => ({
@@ -128,7 +149,9 @@ export class StyleRepository {
       .where(eq(stylesTable.id, style.id!))
       .returning();
 
-    await db.delete(styleTargetsClassesTable).where(eq(styleTargetsClassesTable.styleId, updatedStyle.id!));
+    await db
+      .delete(styleTargetsClassesTable)
+      .where(eq(styleTargetsClassesTable.styleId, updatedStyle.id!));
 
     await db.insert(styleTargetsClassesTable).values(
       style.targets.map((target) => ({
@@ -140,7 +163,10 @@ export class StyleRepository {
   }
 
   public async deleteStyle(id: string) {
-    await db.delete(styleTargetsClassesTable).where(eq(styleTargetsClassesTable.styleId, id)).execute();
+    await db
+      .delete(styleTargetsClassesTable)
+      .where(eq(styleTargetsClassesTable.styleId, id))
+      .execute();
     await db.delete(stylesTable).where(eq(stylesTable.id, id)).execute();
   }
 
@@ -178,14 +204,17 @@ export class StyleRepository {
       id: activeStyle.styleId,
       name: activeStyle.style.name,
       type: activeStyle.style.type,
-      classes: activeStyle.style.classes.map((c) => ({
-        target: {
-          id: c.styleTargetId,
-          name: c.styleTarget.target,
-          description: c.styleTarget.description ?? undefined,
-        },
-        classes: c.classes,
-      })),
+      classes: activeStyle.style.classes
+        .sort((a, b) => a.styleTarget.order - b.styleTarget.order)
+        .map((c) => ({
+          target: {
+            id: c.styleTargetId,
+            name: c.styleTarget.target,
+            order: c.styleTarget.order,
+            description: c.styleTarget.description ?? undefined,
+          },
+          classes: c.classes,
+        })),
     };
   }
 }

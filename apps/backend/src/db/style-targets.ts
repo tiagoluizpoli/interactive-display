@@ -1,39 +1,86 @@
 import { sql } from 'drizzle-orm';
 import { db } from './database-setup';
-import { stylesTable, styleTargetsClassesTable, styleAvailableTargetsTable, activeStylesTable } from './schema';
+import {
+  stylesTable,
+  styleTargetsClassesTable,
+  styleAvailableTargetsTable,
+  activeStylesTable,
+} from './schema';
 
 export const seedStyles = async () => {
   const presentationTatgets = await db
     .insert(styleAvailableTargetsTable)
     .values([
       // Music
-      { type: 'music', target: 'container', description: 'Bloco externo que envolve o conteúdo' },
-      { type: 'music', target: 'text-container', description: 'Bloco interno que envolve a letra' },
-      { type: 'music', target: 'text', description: 'A letra em si' },
+      {
+        type: 'music',
+        target: 'container',
+        order: 0,
+        description: 'Bloco externo que envolve o conteúdo',
+      },
+      {
+        type: 'music',
+        target: 'text-container',
+        order: 1,
+        description: 'Bloco interno que envolve a letra',
+      },
+      { type: 'music', target: 'text', order: 2, description: 'A letra em si' },
 
       // bible
-      { type: 'bible', target: 'container', description: 'Bloco externo que envolve todo o conteúdo' },
-      { type: 'bible', target: 'inner-container', description: 'Bloco interno que envolve todo o conteúdo' },
+      {
+        type: 'bible',
+        target: 'container',
+        order: 0,
+        description: 'Bloco externo que envolve todo o conteúdo',
+      },
+      {
+        type: 'bible',
+        target: 'inner-container',
+        order: 1,
+        description: 'Bloco interno que envolve todo o conteúdo',
+      },
       {
         type: 'bible',
         target: 'reference-container',
-        description: 'Bloco envolve a referência da bíblia (referência e versão)',
+        order: 2,
+        description:
+          'Bloco envolve a referência da bíblia (referência e versão)',
       },
-      { type: 'bible', target: 'reference', description: 'Referência da bíblia (Lívro, Capítulo e Versículo)' },
-      { type: 'bible', target: 'version', description: 'Versão da bíblia' },
+      {
+        type: 'bible',
+        target: 'reference',
+        order: 3,
+        description: 'Referência da bíblia (Lívro, Capítulo e Versículo)',
+      },
+      {
+        type: 'bible',
+        target: 'version',
+        order: 4,
+        description: 'Versão da bíblia',
+      },
       {
         type: 'bible',
         target: 'text-container',
+        order: 5,
         description: 'Bloco interno que envolve o texto da bíblia',
       },
 
-      { type: 'bible', target: 'text', description: 'Texto da bíblia' },
+      {
+        type: 'bible',
+        target: 'text',
+        order: 6,
+        description: 'Texto da bíblia',
+      },
     ])
     .onConflictDoUpdate({
-      target: [styleAvailableTargetsTable.type, styleAvailableTargetsTable.target],
+      target: [
+        styleAvailableTargetsTable.type,
+        styleAvailableTargetsTable.target,
+      ],
       set: {
         type: sql`excluded.type`,
         target: sql`excluded.target`,
+        order: sql`excluded."order"`,
         description: sql`excluded.description`,
       },
     })
@@ -58,65 +105,80 @@ export const seedStyles = async () => {
     .insert(styleTargetsClassesTable)
     .values([
       {
-        styleTargetId: presentationTatgets.find((target) => target.type === 'music' && target.target === 'container')!
-          .id!,
+        styleTargetId: presentationTatgets.find(
+          (target) => target.type === 'music' && target.target === 'container',
+        )!.id!,
         styleId: musicStyle.id!,
         classes: 'w-full p-4 flex justify-center',
       },
       {
         styleTargetId: presentationTatgets.find(
-          (target) => target.type === 'music' && target.target === 'text-container',
+          (target) =>
+            target.type === 'music' && target.target === 'text-container',
         )!.id!,
         styleId: musicStyle.id!,
-        classes: 'w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl',
+        classes:
+          'w-fit text-5xl font-bold bg-[rgba(0,0,0,0.9)] text-white px-8 py-6 rounded-xl',
       },
       {
-        styleTargetId: presentationTatgets.find((target) => target.type === 'bible' && target.target === 'container')!
-          .id!,
+        styleTargetId: presentationTatgets.find(
+          (target) => target.type === 'bible' && target.target === 'container',
+        )!.id!,
         styleId: bibleStyle.id!,
         classes: 'w-full p-4',
       },
       {
         styleTargetId: presentationTatgets.find(
-          (target) => target.type === 'bible' && target.target === 'inner-container',
+          (target) =>
+            target.type === 'bible' && target.target === 'inner-container',
         )!.id!,
         styleId: bibleStyle.id!,
-        classes: 'bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl4',
+        classes:
+          'bg-[rgba(0,0,0,0.9)] w-full font-sans flex flex-col items-end gap-2 p-8 rounded-2xl4',
       },
       {
         styleTargetId: presentationTatgets.find(
-          (target) => target.type === 'bible' && target.target === 'reference-container',
+          (target) =>
+            target.type === 'bible' && target.target === 'reference-container',
         )!.id!,
         styleId: bibleStyle.id!,
         classes: 'flex items-start gap-4 pb-4 mb-2',
       },
       {
-        styleTargetId: presentationTatgets.find((target) => target.type === 'bible' && target.target === 'reference')!
-          .id!,
+        styleTargetId: presentationTatgets.find(
+          (target) => target.type === 'bible' && target.target === 'reference',
+        )!.id!,
         styleId: bibleStyle.id!,
         classes: 'w-fit font-bold text-5xl text-white  rounded-xl',
       },
       {
-        styleTargetId: presentationTatgets.find((target) => target.type === 'bible' && target.target === 'version')!
-          .id!,
+        styleTargetId: presentationTatgets.find(
+          (target) => target.type === 'bible' && target.target === 'version',
+        )!.id!,
         styleId: bibleStyle.id!,
         classes: 'text-2xl font-thin text-white',
       },
       {
         styleTargetId: presentationTatgets.find(
-          (target) => target.type === 'bible' && target.target === 'text-container',
+          (target) =>
+            target.type === 'bible' && target.target === 'text-container',
         )!.id!,
         styleId: bibleStyle.id!,
         classes: 'w-full',
       },
       {
-        styleTargetId: presentationTatgets.find((target) => target.type === 'bible' && target.target === 'text')!.id!,
+        styleTargetId: presentationTatgets.find(
+          (target) => target.type === 'bible' && target.target === 'text',
+        )!.id!,
         styleId: bibleStyle.id!,
         classes: 'text-5xl text-white',
       },
     ])
     .onConflictDoUpdate({
-      target: [styleTargetsClassesTable.styleTargetId, styleTargetsClassesTable.styleId],
+      target: [
+        styleTargetsClassesTable.styleTargetId,
+        styleTargetsClassesTable.styleId,
+      ],
       set: {
         classes: sql`excluded.classes`,
       },

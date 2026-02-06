@@ -42,7 +42,9 @@ styleRoutes.get('/', async (req, res) => {
   const parsedParameters = getStylesParametersSchema.safeParse(req.query);
 
   if (!parsedParameters.success) {
-    return res.status(HttpStatusCode.BadRequest).json({ errors: parsedParameters.error.errors });
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .json({ errors: parsedParameters.error.errors });
   }
 
   const { type } = parsedParameters.data;
@@ -71,7 +73,9 @@ styleRoutes.get('/:styleId', async (req, res) => {
   const style = await styleRepository.getStyleById(styleId);
 
   if (!style) {
-    return res.status(HttpStatusCode.NotFound).json({ message: 'Estilo não encontrado' });
+    return res
+      .status(HttpStatusCode.NotFound)
+      .json({ message: 'Estilo não encontrado' });
   }
 
   return res.json(style);
@@ -81,14 +85,18 @@ styleRoutes.post('/', async (req, res) => {
   const parsedBody = upsertStyleSchema.safeParse(req.body);
 
   if (!parsedBody.success) {
-    return res.status(HttpStatusCode.BadRequest).json({ errors: parsedBody.error.errors });
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .json({ errors: parsedBody.error.errors });
   }
 
   const { type, name } = parsedBody.data;
   const existingStyle = await styleRepository.getSyleByName({ type, name });
 
   if (existingStyle) {
-    return res.status(HttpStatusCode.Conflict).json({ message: 'Estilo já existe' });
+    return res
+      .status(HttpStatusCode.Conflict)
+      .json({ message: 'Estilo já existe' });
   }
 
   const style = await styleRepository.insertStyle(parsedBody.data);
@@ -105,13 +113,17 @@ styleRoutes.put('/:styleId', async (req, res) => {
     const parsedBody = upsertStyleSchema.safeParse(req.body);
 
     if (!parsedBody.success) {
-      return res.status(HttpStatusCode.BadRequest).json({ errors: parsedBody.error.errors });
+      return res
+        .status(HttpStatusCode.BadRequest)
+        .json({ errors: parsedBody.error.errors });
     }
 
     const existingStyle = await styleRepository.getStyleById(styleId);
 
     if (!existingStyle) {
-      return res.status(HttpStatusCode.NotFound).json({ message: 'Estilo não encontrado' });
+      return res
+        .status(HttpStatusCode.NotFound)
+        .json({ message: 'Estilo não encontrado' });
     }
 
     const styleToUpdate = { ...parsedBody.data, id: styleId };
@@ -144,7 +156,9 @@ styleRoutes.delete('/:styleId', async (req, res) => {
     const style = await styleRepository.getStyleById(styleId);
 
     if (!style) {
-      return res.status(HttpStatusCode.NotFound).json({ message: 'Estilo não encontrado' });
+      return res
+        .status(HttpStatusCode.NotFound)
+        .json({ message: 'Estilo não encontrado' });
     }
 
     if (style.isActive) {
@@ -165,7 +179,9 @@ styleRoutes.delete('/:styleId', async (req, res) => {
 styleRoutes.get('/active/:code', async (req, res) => {
   const parsedParameters = getActiveSchema.safeParse(req.params);
   if (!parsedParameters.success) {
-    return res.status(HttpStatusCode.BadRequest).json({ errors: parsedParameters.error.errors });
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .json({ errors: parsedParameters.error.errors });
   }
   const { code } = parsedParameters.data;
 
@@ -178,7 +194,9 @@ styleRoutes.post('/active', async (req, res) => {
   const parsedBody = setActiveSchema.safeParse(req.body);
 
   if (!parsedBody.success) {
-    return res.status(HttpStatusCode.BadRequest).json({ errors: parsedBody.error.errors });
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .json({ errors: parsedBody.error.errors });
   }
 
   const { code, styleId } = parsedBody.data;

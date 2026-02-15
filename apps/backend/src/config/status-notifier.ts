@@ -1,6 +1,10 @@
 import { io } from '@/server';
 import { createChildLogger } from './logger';
-// Assuming ConfigType is 'holyrics' | 'pro-presenter' based on your code
+import { env } from './env';
+
+const {
+  notifier: { broadcastInterval },
+} = env;
 
 type PossibleValues = string | number | boolean | PossibleValues[] | undefined;
 
@@ -27,7 +31,9 @@ export type ProPresenterPropType = (typeof propresenterPropTypes)[number];
 
 // ProPresenter Item Type: 'active' is required, specific props are optional
 export type ProPresenterUnionPropType = Record<CommonPropType, PossibleValues> &
-  Partial<Record<Exclude<ProPresenterPropType, CommonPropType>, PossibleValues>>;
+  Partial<
+    Record<Exclude<ProPresenterPropType, CommonPropType>, PossibleValues>
+  >;
 
 interface BaseStatus {
   logs: StatusNotifierLogs[];
@@ -99,7 +105,11 @@ export class StatusNotifier {
    * K extends keyof StatusMap: K becomes 'holyrics' | 'pro-presenter'
    * items: Partial<StatusMap[K]['items']>: Automatically grabs the correct item type based on K
    */
-  setStatus<K extends keyof StatusMap>({ subject, items, logs }: StatusNotifierSetStatus<K>) {
+  setStatus<K extends keyof StatusMap>({
+    subject,
+    items,
+    logs,
+  }: StatusNotifierSetStatus<K>) {
     if (logs?.length) {
       this.addLogs(subject, logs);
     }
@@ -112,7 +122,10 @@ export class StatusNotifier {
     } as StatusMap[K]['items'];
   }
 
-  addLogs(subject: keyof StatusMap, logs: Pick<StatusNotifierLogs, 'message' | 'context'>[]) {
+  addLogs(
+    subject: keyof StatusMap,
+    logs: Pick<StatusNotifierLogs, 'message' | 'context'>[],
+  ) {
     this.statuses[subject].logs.push(
       ...logs.map((log) => ({
         timestamp: new Date(),
@@ -125,11 +138,13 @@ export class StatusNotifier {
     this.intervalId = setInterval(() => {
       const notificationsToPush = Object.assign({}, this.statuses);
 
-      this.logger.info('Broadcasting notifications', { notifications: notificationsToPush });
+      this.logger.info('Broadcasting notifications', {
+        notifications: notificationsToPush,
+      });
 
       io.emit('notification.status', notificationsToPush);
       this.clearLogs();
-    }, 1 * 1000);
+    }, broadcastInterval);
   }
 
   public destroy() {

@@ -1,0 +1,1 @@
+ALTER TABLE `style_available_targets` ADD `order` integer DEFAULT 0 NOT NULL;

@@ -1,16 +1,29 @@
 import { Button } from '@/src/components/ui/button';
 import { StyleSheet } from './style-sheet';
 
-import { upsertStyleSchema, useCreateStyleMutation, type UpsertStyle, type TargetListItem } from '../../core';
+import {
+  upsertStyleSchema,
+  useCreateStyleMutation,
+  type UpsertStyle,
+  type TargetListItem,
+} from '../../core';
 
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/src/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
 import { Separator } from '@/src/components/ui/separator';
 import { useState } from 'react';
 import { BibleViewer } from './bible-viewer';
 import { MusicViewer } from './music-viewer';
+import { Textarea } from '@/src/components/ui/textarea';
 
 interface Props {
   type: 'bible' | 'music';
@@ -37,14 +50,7 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
     mode: 'onTouched',
   });
 
-  const {
-    handleSubmit,
-    register,
-    reset,
-    watch,
-    control,
-    formState: { errors },
-  } = form;
+  const { handleSubmit, reset, watch, control } = form;
 
   const { fields } = useFieldArray({
     control,
@@ -99,14 +105,45 @@ export const CreateStyleForm = ({ type, targets, triggerButton }: Props) => {
 
         <FieldSet>
           <FieldLabel>Classes</FieldLabel>
-          <FieldDescription>Preencha cada propriedade com as classes do tailwind</FieldDescription>
-          <FieldGroup>
-            {fields.map((field, index) => (
-              <Field key={field.id}>
-                <FieldLabel>{targets.find((i) => i.id === field.targetId)?.target}</FieldLabel>
-                <Input {...register(`targets.${index}.classes`)} />
-                <FieldError errors={[errors.targets?.[index]?.classes]} />
-              </Field>
+          <FieldDescription>
+            Preencha cada propriedade com as classes do tailwind
+          </FieldDescription>
+          <FieldGroup className="grid grid-cols-3 gap-8">
+            {fields.map((fieldItem, index) => (
+              <Controller
+                key={fieldItem.id}
+                control={control}
+                name={`targets.${index}.classes`}
+                render={({ field, fieldState }) => {
+                  return (
+                    <Field aria-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        {
+                          targets.find((i) => i.id === fieldItem.targetId)
+                            ?.target
+                        }
+                      </FieldLabel>
+                      <Textarea
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                        className="resize-none h-24"
+                      />
+
+                      {fieldState.invalid ? (
+                        <FieldError>{fieldState.error?.message}</FieldError>
+                      ) : (
+                        <FieldDescription>
+                          {
+                            targets.find((i) => i.id === fieldItem.targetId)
+                              ?.description
+                          }
+                        </FieldDescription>
+                      )}
+                    </Field>
+                  );
+                }}
+              />
             ))}
           </FieldGroup>
         </FieldSet>

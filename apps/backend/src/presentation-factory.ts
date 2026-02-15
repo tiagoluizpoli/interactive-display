@@ -1,6 +1,10 @@
 import { ProPresenter } from './services';
-import { Holyrics } from './services/holyrics-v2/holyrics';
-import { Orchestrator, MusicPresentation, BiblePresentation } from './presentations';
+import { Holyrics } from './services/holyrics/holyrics';
+import {
+  Orchestrator,
+  MusicPresentation,
+  BiblePresentation,
+} from './presentations';
 import { ConfigRepository } from './db';
 import { StatusNotifier, validateConfig } from './config';
 import { createChildLogger } from './config/logger';
@@ -36,7 +40,9 @@ const orchestrateHolyrics = async (
 
   if (!validatedConfig) {
     localPersistence.removePresentation('holyrics');
-    logger.info('Holyrics configuration missing or invalid. Removed existing presentation.');
+    logger.info(
+      'Holyrics configuration missing or invalid. Removed existing presentation.',
+    );
 
     return;
   }
@@ -60,7 +66,9 @@ const orchestrateProPresenter = async (
 
   if (!validatedConfig) {
     localPersistence.removePresentation('pro-presenter');
-    logger.info('ProPresenter configuration missing or invalid. Removed existing presentation.');
+    logger.info(
+      'ProPresenter configuration missing or invalid. Removed existing presentation.',
+    );
 
     return;
   }

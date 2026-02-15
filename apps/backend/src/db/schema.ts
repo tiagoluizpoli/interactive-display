@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { relations } from 'drizzle-orm';
-import { primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 
 const presentationTypes = ['music', 'bible'] as const;
 
@@ -44,7 +50,12 @@ export const stylesTable = sqliteTable(
     type: text('type', { enum: presentationTypes }).notNull(),
     name: text('name').notNull(),
   },
-  (table) => [uniqueIndex('presentation_styles_name_type_unique').on(table.type, table.name)],
+  (table) => [
+    uniqueIndex('presentation_styles_name_type_unique').on(
+      table.type,
+      table.name,
+    ),
+  ],
 );
 
 export const styleAvailableTargetsTable = sqliteTable(
@@ -55,9 +66,15 @@ export const styleAvailableTargetsTable = sqliteTable(
       .$defaultFn(() => randomUUID()),
     type: text('type', { enum: presentationTypes }).notNull(),
     target: text('target').notNull(),
+    order: integer('order').notNull().default(0),
     description: text('description'),
   },
-  (table) => [uniqueIndex('style_targets_type_target_unique').on(table.type, table.target)],
+  (table) => [
+    uniqueIndex('style_targets_type_target_unique').on(
+      table.type,
+      table.target,
+    ),
+  ],
 );
 
 export const styleTargetsClassesTable = sqliteTable(
@@ -81,30 +98,42 @@ export const activeStylesTable = sqliteTable('active_styles', {
     .references(() => stylesTable.id),
 });
 
-export const activeStylesRelations = relations(activeStylesTable, ({ one }) => ({
-  style: one(stylesTable, {
-    fields: [activeStylesTable.styleId],
-    references: [stylesTable.id],
+export const activeStylesRelations = relations(
+  activeStylesTable,
+  ({ one }) => ({
+    style: one(stylesTable, {
+      fields: [activeStylesTable.styleId],
+      references: [stylesTable.id],
+    }),
   }),
-}));
+);
 
-export const presentationStyleRelations = relations(stylesTable, ({ many }) => ({
-  targets: many(styleAvailableTargetsTable),
-  classes: many(styleTargetsClassesTable),
-  activeStyles: many(activeStylesTable),
-}));
-
-export const stylePropertyRelations = relations(styleAvailableTargetsTable, ({ many }) => ({
-  classes: many(styleTargetsClassesTable),
-}));
-
-export const styleClassesRelations = relations(styleTargetsClassesTable, ({ one }) => ({
-  styleTarget: one(styleAvailableTargetsTable, {
-    fields: [styleTargetsClassesTable.styleTargetId],
-    references: [styleAvailableTargetsTable.id],
+export const presentationStyleRelations = relations(
+  stylesTable,
+  ({ many }) => ({
+    targets: many(styleAvailableTargetsTable),
+    classes: many(styleTargetsClassesTable),
+    activeStyles: many(activeStylesTable),
   }),
-  style: one(stylesTable, {
-    fields: [styleTargetsClassesTable.styleId],
-    references: [stylesTable.id],
+);
+
+export const stylePropertyRelations = relations(
+  styleAvailableTargetsTable,
+  ({ many }) => ({
+    classes: many(styleTargetsClassesTable),
   }),
-}));
+);
+
+export const styleClassesRelations = relations(
+  styleTargetsClassesTable,
+  ({ one }) => ({
+    styleTarget: one(styleAvailableTargetsTable, {
+      fields: [styleTargetsClassesTable.styleTargetId],
+      references: [styleAvailableTargetsTable.id],
+    }),
+    style: one(stylesTable, {
+      fields: [styleTargetsClassesTable.styleId],
+      references: [stylesTable.id],
+    }),
+  }),
+);

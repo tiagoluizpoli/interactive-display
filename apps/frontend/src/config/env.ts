@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { persistedAppConfig } from './persisted-app-config';
 
 const envSchema = z.object({
-  VITE_BASE_URL: z.string(),
+  VITE_BASE_URL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(import.meta.env);

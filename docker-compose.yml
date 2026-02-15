@@ -25,9 +25,8 @@ services:
 
   frontend:
     container_name: frontend
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
+    image: tiagoluizpoli/church-frontend:${DOCKER_FRONTEND_TAG:-latest}
+    pull_policy: always
     ports:
       - "8090:80"
     volumes:

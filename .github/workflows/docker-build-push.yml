@@ -1,0 +1,40 @@
+name: Build and Push Docker Image (Tagged)
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on git tag like v1.0.0
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to fetch tags
+
+      - name: Get Git tag
+        id: tag
+        run: echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT     
+
+      - name: Log in to Docker registry        
+        run: docker login ${{ vars.DOCKER_REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: Build and Push Backend
+        run: |
+          docker build -t ${{ vars.DOCKER_REGISTRY }}/church-backend:${{ steps.tag.outputs.tag }} -f apps/backend/Dockerfile .
+          docker tag ${{ vars.DOCKER_REGISTRY }}/church-backend:${{ steps.tag.outputs.tag }} ${{ vars.DOCKER_REGISTRY }}/church-backend:latest
+          docker push ${{ vars.DOCKER_REGISTRY }}/church-backend:${{ steps.tag.outputs.tag }}
+          docker push ${{ vars.DOCKER_REGISTRY }}/church-backend:latest
+
+      - name: Build and Push Frontend
+        run: |
+          docker build -t ${{ vars.DOCKER_REGISTRY }}/church-frontend:${{ steps.tag.outputs.tag }} -f apps/frontend/Dockerfile .
+          docker tag ${{ vars.DOCKER_REGISTRY }}/church-frontend:${{ steps.tag.outputs.tag }} ${{ vars.DOCKER_REGISTRY }}/church-frontend:latest
+          docker push ${{ vars.DOCKER_REGISTRY }}/church-frontend:${{ steps.tag.outputs.tag }}
+          docker push ${{ vars.DOCKER_REGISTRY }}/church-frontend:latest
+      
+      - name: Trigger a new Deployment
+        run: curl https://lunalabs.com.br/api/deploy/compose/D-cLzng_Yd-Gammc3mp5p
